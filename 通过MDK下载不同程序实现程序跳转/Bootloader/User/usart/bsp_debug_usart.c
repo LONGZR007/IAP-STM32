@@ -15,11 +15,14 @@
   ******************************************************************************
   */
   
+#include <string.h>
 #include "./usart/bsp_debug_usart.h"
+#include "./tim/bsp_basic_tim.h"
 
 #define RX_MAX_LEN     (128*1024)
 uint8_t data_rx_buff[RX_MAX_LEN];
 uint32_t data_rx_len = 0;
+uint8_t data_rx_flag = 0;
 
  /**
   * @brief  配置嵌套向量中断控制器NVIC
@@ -186,6 +189,17 @@ uint32_t get_rx_data(uint8_t *data)
 }
 
 /**
+  * @brief  复位接收数据缓冲区
+  * @param  无
+  * @retval 无
+  */
+void reset_rx_data(void)
+{
+  memset(data_rx_buff, 0, sizeof(data_rx_buff));    // 清除数据
+  data_rx_len = 0;                                  // 重置计数
+}
+
+/**
   * @brief  串口中断处理服务函数
   * @param  无
   * @retval 无
@@ -196,8 +210,11 @@ void DEBUG_USART_IRQHandler(void)
 	{		
     if (data_rx_len < RX_MAX_LEN)
     {
-      data_rx_buff[data_rx_len] = USART_ReceiveData(DEBUG_USART);;
+      data_rx_buff[data_rx_len++] = USART_ReceiveData(DEBUG_USART);
+      data_rx_flag = 1;         // 标记为接收
+      reset_sec_timestamp();    // 重置秒时间戳
     }
-	}	 
-}	
+	}
+}
+
 /*********************************************END OF FILE**********************/

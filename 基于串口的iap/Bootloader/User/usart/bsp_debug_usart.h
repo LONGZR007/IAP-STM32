@@ -4,6 +4,7 @@
 #include "stm32f4xx.h"
 #include <stdio.h>
 
+extern uint8_t data_rx_flag;
 
 //Òý½Å¶¨Òå
 /*******************************************************/
@@ -30,6 +31,8 @@
 void Debug_USART_Config(void);
 void Usart_SendByte( USART_TypeDef * pUSARTx, uint8_t ch);
 void Usart_SendString( USART_TypeDef * pUSARTx, char *str);
+
+uint32_t get_rx_data(uint8_t *data);
 
 void Usart_SendHalfWord( USART_TypeDef * pUSARTx, uint16_t ch);
 

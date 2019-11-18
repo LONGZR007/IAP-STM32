@@ -684,14 +684,14 @@
               <FilePath>..\..\User\boot_loader\boot_loader.c</FilePath>
             </File>
             <File>
-              <FileName>bsp_debug_usart.c</FileName>
+              <FileName>bsp_basic_tim.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\通过MDK下载不同程序实现程序跳转\Bootloader\User\usart\bsp_debug_usart.c</FilePath>
+              <FilePath>..\..\User\tim\bsp_basic_tim.c</FilePath>
             </File>
             <File>
-              <FileName>bsp_SysTick.c</FileName>
+              <FileName>bsp_debug_usart.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\通过MDK下载不同程序实现程序跳转\Bootloader\User\systick\bsp_SysTick.c</FilePath>
+              <FilePath>..\..\User\usart\bsp_debug_usart.c</FilePath>
             </File>
           </Files>
         </Group>

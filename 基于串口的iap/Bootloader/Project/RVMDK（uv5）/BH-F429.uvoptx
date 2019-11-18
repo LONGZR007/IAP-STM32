@@ -787,8 +787,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\..\通过MDK下载不同程序实现程序跳转\Bootloader\User\usart\bsp_debug_usart.c</PathWithFileName>
-      <FilenameWithoutPath>bsp_debug_usart.c</FilenameWithoutPath>
+      <PathWithFileName>..\..\User\tim\bsp_basic_tim.c</PathWithFileName>
+      <FilenameWithoutPath>bsp_basic_tim.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -799,8 +799,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\..\通过MDK下载不同程序实现程序跳转\Bootloader\User\systick\bsp_SysTick.c</PathWithFileName>
-      <FilenameWithoutPath>bsp_SysTick.c</FilenameWithoutPath>
+      <PathWithFileName>..\..\User\usart\bsp_debug_usart.c</PathWithFileName>
+      <FilenameWithoutPath>bsp_debug_usart.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>

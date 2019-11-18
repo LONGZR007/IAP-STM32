@@ -4,6 +4,7 @@
 #include "stm32f4xx.h"
 #include <stdio.h>
 
+extern uint8_t data_rx_flag;
 
 //Òý½Å¶¨Òå
 /*******************************************************/
