@@ -39,17 +39,17 @@ int main(void)
 	printf("\r\n 欢迎使用野火  STM32 F429 开发板。\r\n");	
 	printf("正在进行读写内部FLASH实验，请耐心等待\r\n");
 	
-	if(InternalFlash_Test()==0)
-	{
-		LED_GREEN;
-		printf("读写内部FLASH测试成功\r\n");
+//	if(InternalFlash_Test()==0)
+//	{
+//		LED_GREEN;
+//		printf("读写内部FLASH测试成功\r\n");
 
-	}
-	else
-	{
-		printf("读写内部FLASH测试失败\r\n");
-		LED_RED;
-	}
+//	}
+//	else
+//	{
+//		printf("读写内部FLASH测试失败\r\n");
+//		LED_RED;
+//	}
 	
 	
   while(1)

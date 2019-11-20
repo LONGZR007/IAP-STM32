@@ -3,8 +3,15 @@
 
 #include "stm32f4xx.h"
 
+typedef struct
+{
+	uint32_t start_addr;    // 扇区的起始地址
+	uint32_t number;        // 扇区编号
+	uint32_t size;          // 扇区大小
+	 
+} sector_t;
 
-
+#define KB     (1024)
 
 /* Base address of the Flash sectors */ 
 #define ADDR_FLASH_SECTOR_0     ((uint32_t)0x08000000) /* Base address of Sector 0, 16 Kbytes   */
