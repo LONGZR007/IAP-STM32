@@ -136,11 +136,17 @@ static sector_t GetSector(uint32_t Address);
 int flash_write_data(uint32_t start_address, const void *data, uint32_t len)
 {
 	uint32_t *data_32 = (uint32_t *)data;
-	uint32_t data_len = len;
+	uint32_t *data_v = (uint32_t *)data;
 	uint32_t sector_size  = 0;    // 记录所需扇区的大小
 	sector_t sector_inof;         // 记录扇区的信息
 	uint32_t address = start_address;
 	__IO uint32_t uw_data32 = 0;
+	__IO uint32_t uwMemoryProgramStatus = 0;
+	
+	if (start_address % 4 != 0)    // 检查地址的合法性
+	{
+		return -1;    // 地址非法，返回
+	}
 	
 	sector_inof = GetSector(start_address);    // 获取第一个扇区的信息
 	
@@ -205,32 +211,30 @@ int flash_write_data(uint32_t start_address, const void *data, uint32_t len)
 	/* 给FLASH上锁，防止内容被篡改*/
   FLASH_Lock(); 
 	
-//	address = start_address;
-//	
-//	/* 数据校验 */
-//  while (uwAddress < FLASH_USER_END_ADDR)
-//  {
-//    uw_data32 = *(__IO uint32_t*)address;
-
-//    if (uw_data32 != DATA_32)
-//    {
-//      uwMemoryProgramStatus++;  
-//    }
-
-//    uwAddress = uwAddress + 4;
-//  }  
-//	
-//  /* 数据校验不正确 */
-//  if(uwMemoryProgramStatus)
-//  {    
-//		return -1;
-//  }
-//  else /*数据校验正确*/
-//  { 
-//		return 0;   
-//  }
+	address = start_address;
 	
-	return 0;  
+	/* 数据校验 */
+  while (address <= start_address + len)
+  {
+    uw_data32 = *(__IO uint32_t*)address;
+
+    if (uw_data32 != *data_v++)
+    {
+      uwMemoryProgramStatus++;  
+    }
+
+    address = address + 4;
+  }  
+	
+  /* 数据校验不正确 */
+  if(uwMemoryProgramStatus)
+  {    
+		return -1;
+  }
+  else /*数据校验正确*/
+  { 
+		return 0;   
+  }
 }
 
 /**
