@@ -32,7 +32,9 @@ void Debug_USART_Config(void);
 void Usart_SendByte( USART_TypeDef * pUSARTx, uint8_t ch);
 void Usart_SendString( USART_TypeDef * pUSARTx, char *str);
 
-uint32_t get_rx_data(uint8_t *data);
+uint8_t *get_rx_data(void);
+uint32_t get_rx_len(void);
+void reset_rx_data(void);
 
 void Usart_SendHalfWord( USART_TypeDef * pUSARTx, uint16_t ch);
 

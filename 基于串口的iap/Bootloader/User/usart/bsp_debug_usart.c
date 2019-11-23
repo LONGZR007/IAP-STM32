@@ -176,15 +176,28 @@ int fgetc(FILE *f)
 		return (int)USART_ReceiveData(DEBUG_USART);
 }
 
+void in(uint8_t *p)
+{
+	
+}
+
 /**
   * @brief  获取接收到的数据信息
   * @param  data：接收数据的指针
   * @retval 接收到的数据长度
   */
-uint32_t get_rx_data(uint8_t *data)
+uint8_t *get_rx_data(void)
 {
-  data = data_rx_buff;
-  
+  return data_rx_buff;
+}
+
+/**
+  * @brief  获取接收到的数据信息
+  * @param  data：接收数据的指针
+  * @retval 接收到的数据长度
+  */
+uint32_t get_rx_len(void)
+{
   return data_rx_len;
 }
 

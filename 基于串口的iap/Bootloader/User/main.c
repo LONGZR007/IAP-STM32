@@ -21,6 +21,7 @@
 #include "./boot_loader/boot_loader.h" 
 #include "./usart/bsp_debug_usart.h"
 #include "./tim/bsp_basic_tim.h"
+#include "./internalFlash/bsp_internalFlash.h"  
 
 /**
   * @brief  主函数
@@ -29,34 +30,57 @@
   */
 int main(void)
 {
+	uint8_t *app_data = NULL;
+  uint32_t app_len = 0;
+	
   /*初始化按键*/
   Key_GPIO_Config();
-  uint8_t *app_data = NULL;
-  uint8_t app_len = 0;
+	Debug_USART_Config();
+	TIMx_Configuration();
 	
+	printf(" IAP 演示 DEMO！\r\n");
+
 	/* 轮询按键状态，若按键按下则反转LED */ 
 	while(1)
 	{
     
-    if (data_rx_flag == 1 > 0 && get_sec_timestamp() > 3)    // 接收到数据并且已经超过2s以上没有接收到新的数据
+    if (data_rx_flag == 1 > 0 && get_sec_timestamp() > 2)    // 接收到数据并且已经超过2s以上没有接收到新的数据
     {
       data_rx_flag = 2;
-      printf("新的 App 已经接收完成！\n");
+      printf("新的 App 已经接收完成！\r\n");
     }
     
 		if( Key_Scan(KEY1_GPIO_PORT,KEY1_PIN) == KEY_ON  )
 		{
 			/* 获取接收数据 */
-      app_len = get_rx_data(app_data);
+      app_data = get_rx_data();
+			app_len  = get_rx_len();
+			
+			printf("开始升级 App ！共 %d 个字节\r\n", app_len);
+			
+			for (uint32_t i=0; i<app_len; i++)
+			{
+				printf("%02X ", app_data[i]);
+			}
       
       /* 写 App 到 FLASH */
-//			write_app_flash(FLASH_APP_ADDR, app_data, app_len);
+			if (flash_write_data(FLASH_APP_ADDR, app_data, app_len) == 0)
+			{
+				printf("升级 App 完成！\r\n");
+			}
+			else
+			{
+				printf("升级 App 失败！\r\n");
+			}
+			
+			reset_rx_data();
 		}
     
     if( Key_Scan(KEY2_GPIO_PORT,KEY2_PIN) == KEY_ON  )
 		{
 			/*LED2反转*/
-			iap_jump_app(0x08010000);
+			printf("开始运行 App！\r\n");
+			iap_jump_app(FLASH_APP_ADDR);
 		}
 	}
 }

@@ -223,15 +223,17 @@ int flash_write_data(uint32_t start_address, const void *data, uint32_t len)
   {
     uw_data = *(__IO uint8_t*)address;
     i++;
-		printf("地址 ： 0x%X 实际内容是 ：0x%X  希望的内容是 ：0x%X \r\n", address, uw_data, *data_v);
+		printf("%02X ", uw_data);
+//		printf("地址 ： 0x%X 实际内容是 ：0x%X  希望的内容是 ：0x%X \r\n", address, uw_data, *data_v);
     if (uw_data != *data_v++)
     {
+			
       uwMemoryProgramStatus++;  
     }
 
     address++;
   }  
-	printf("共检查了 %X \r\n", i);
+	printf("共检查了 %d 次\r\n", i);
   /* 数据校验不正确 */
   if(uwMemoryProgramStatus)
   {    

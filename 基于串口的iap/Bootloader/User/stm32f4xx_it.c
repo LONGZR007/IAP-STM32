@@ -29,6 +29,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_it.h"
+#include <stdio.h>
 
 /** @addtogroup STM32F429I_DISCOVERY_Examples
   * @{
@@ -65,6 +66,7 @@ void NMI_Handler(void)
   */
 void HardFault_Handler(void)
 {
+	printf("HardFault\n");
   /* Go to infinite loop when Hard Fault exception occurs */
   while (1)
   {}

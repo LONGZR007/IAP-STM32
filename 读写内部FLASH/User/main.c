@@ -19,7 +19,9 @@
 #include "./usart/bsp_debug_usart.h"
 #include "./led/bsp_led.h"   
 #include "./internalFlash/bsp_internalFlash.h"   
+#include <string.h>
 
+uint8_t data[1152] = {0};
 
 
 /**
@@ -39,17 +41,22 @@ int main(void)
 	printf("\r\n 欢迎使用野火  STM32 F429 开发板。\r\n");	
 	printf("正在进行读写内部FLASH实验，请耐心等待\r\n");
 	
-//	if(InternalFlash_Test()==0)
-//	{
-//		LED_GREEN;
-//		printf("读写内部FLASH测试成功\r\n");
+	for(uint32_t i=0; i<sizeof(data); i++)
+	{
+		data[i] = i % 2 ? 0x55 : 0x88;
+	}
+	
+	if(flash_write_data(0x08019000, data, sizeof(data))==0)
+	{
+		LED_GREEN;
+		printf("读写内部FLASH测试成功\r\n");
 
-//	}
-//	else
-//	{
-//		printf("读写内部FLASH测试失败\r\n");
-//		LED_RED;
-//	}
+	}
+	else
+	{
+		printf("读写内部FLASH测试失败\r\n");
+		LED_RED;
+	}
 	
 	
   while(1)
