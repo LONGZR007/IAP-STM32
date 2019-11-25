@@ -12,9 +12,10 @@
 #include "./iap_arch/iap_arch.h"
 
 /* 全局变量. */
-static uint8_t xmodem_packet_number = 1u;         /**< 包计数. */
-static uint32_t xmodem_actual_flash_address = 0u; /**< 写入的地址. */
-static uint8_t x_first_packet_received = X_IS_PACKET;   /**< 是不是包头. */
+static uint8_t xmodem_packet_number = 1u;               /* 包计数. */
+static uint32_t xmodem_actual_flash_address = 0u;       /* 写入的地址. */
+static uint8_t x_first_packet_received = X_IS_PACKET;   /* 是不是包头. */
+static uint32_t sector_size = 0;                        /* 扇区剩余大小. */
 
 /* 局部函数. */
 static uint16_t xmodem_calc_crc(uint8_t *data, uint16_t length);
@@ -42,15 +43,15 @@ void xmodem_receive(void)
     uint8_t header = 0x00u;
 
     /* 获取数据头. */
-    int comm_status = x_receive(&header, 1u);
+    int receive_status = x_receive(&header, 1u);
 
     /* Spam the host (until we receive something) with ACSII "C", to notify it, we want to use CRC-16. */
-    if ((0 != comm_status) && (X_IS_PACKET == x_first_packet_received))
+    if ((0 != receive_status) && (X_IS_PACKET == x_first_packet_received))
     {
       (void)x_transmit_ch(X_C);    // 给上位机返回 ACSII "C" ，告诉上位机将使用 CRC-16 
     }
     /* 超时或其他错误. */
-    else if ((0 != comm_status) && (X_NO_PACKET == x_first_packet_received))
+    else if ((0 != receive_status) && (X_NO_PACKET == x_first_packet_received))
     {
       status = xmodem_error_handler(&error_number, X_MAX_ERRORS);
     }
@@ -60,9 +61,9 @@ void xmodem_receive(void)
     }
 
     /* The header can be: SOH, STX, EOT and CAN. */
+		xmodem_status packet_status = X_ERROR;
     switch(header)
     {
-      xmodem_status packet_status = X_ERROR;
       /* 128或1024字节的数据. */
       case X_SOH:
       case X_STX:
@@ -88,6 +89,7 @@ void xmodem_receive(void)
       /* End of Transmission. */
       case X_EOT:
         /* ACK, feedback to user (as a text), then jump to user application. */
+        sector_size = 0;    // 复位扇区大小
         (void)x_transmit_ch(X_ACK);
         (void)printf("\n\rFirmware updated!\n\r");
         (void)printf("Jumping to user application...\n\r");
@@ -99,7 +101,7 @@ void xmodem_receive(void)
         break;
       default:
         /* Wrong header. */
-//        if (UART_OK == comm_status)
+       if (0 == receive_status)
         {
           status = xmodem_error_handler(&error_number, X_MAX_ERRORS);
         }
@@ -109,10 +111,10 @@ void xmodem_receive(void)
 }
 
 /**
- * @brief   Calculates the CRC-16 for the input package.
- * @param   *data:  Array of the data which we want to calculate.
- * @param   length: Size of the data, either 128 or 1024 bytes.
- * @return  status: The calculated CRC.
+ * @brief   计算接收到包的 CRC-16.
+ * @param   *data:  要计算的数据的数组.
+ * @param   length: 数据的大小，128字节或1024字节.
+ * @return  status: 计算CRC.
  */
 static uint16_t xmodem_calc_crc(uint8_t *data, uint16_t length)
 {
@@ -162,30 +164,32 @@ static xmodem_status xmodem_handle_packet(uint8_t header)
   uint8_t received_data[X_PACKET_1024_SIZE + X_PACKET_DATA_INDEX + X_PACKET_CRC_SIZE];
 
   /* 接收数据. */
-  int comm_status = x_receive(&received_data[0u], length);
+  int receive_status = x_receive(&received_data[0u], length);
 	
   /* 最后两个字节是来自主机的CRC. */
   uint16_t crc_received = ((uint16_t)received_data[length-2u] << 8u) | ((uint16_t)received_data[length-1u]);
   /* 校验. */
   uint16_t crc_calculated = xmodem_calc_crc(&received_data[X_PACKET_DATA_INDEX], size);
 
-  /* 如果是第一个包，那么擦除内存. */
-  if (X_IS_PACKET == x_first_packet_received)
+  /* 当前扇区不够了擦除下一个. */
+  if (sector_size <= size)
   {
-//    if (FLASH_OK == flash_erase(FLASH_APP_START_ADDRESS))
-//    {
-//      x_first_packet_received = true;
-//    }
-//    else
-//    {
-//      status |= X_ERROR_FLASH;
-//    }
+    sector_size += x_receive_flash_erasure(FLASH_APP_ADDR);
+
+    if (0 == sector_size)
+    {
+      x_first_packet_received = 1;
+    }
+    else
+    {
+      status |= X_ERROR_FLASH;
+    }
   }
 
   /* Error handling and flashing. */
   if (X_OK == status)
   {
-    if (UART_OK != comm_status)
+    if (0 != receive_status)
     {
       /* UART error. */
       status |= X_ERROR_UART;
@@ -207,7 +211,7 @@ static xmodem_status xmodem_handle_packet(uint8_t header)
       status |= X_ERROR_CRC;
     }
     /* 没有错误写入 flash. */
-    if (FLASH_OK != flash_write(xmodem_actual_flash_address, (uint32_t*)&received_data[X_PACKET_DATA_INDEX], (uint32_t)size/4u))
+    if (0 != x_receive_flash_writea(xmodem_actual_flash_address, (uint8_t *)&received_data[X_PACKET_DATA_INDEX], (uint32_t)size/4u))
     {
       /* Flashing error. */
       status |= X_ERROR_FLASH;
@@ -219,6 +223,7 @@ static xmodem_status xmodem_handle_packet(uint8_t header)
   { 
     xmodem_packet_number++;
     xmodem_actual_flash_address += size;
+    sector_size -= size;
   }
 
   return status;
@@ -240,14 +245,14 @@ static xmodem_status xmodem_error_handler(uint8_t *error_number, uint8_t max_err
   if ((*error_number) >= max_error_number)
   {
     /* Graceful abort. */
-    (void)uart_transmit_ch(X_CAN);
-    (void)uart_transmit_ch(X_CAN);
+    (void)x_transmit_ch(X_CAN);
+    (void)x_transmit_ch(X_CAN);
     status = X_ERROR;
   }
   /* Otherwise send a NAK for a repeat. */
   else
   {
-    (void)uart_transmit_ch(X_NAK);
+    (void)x_transmit_ch(X_NAK);
     status = X_OK;
   }
   return status;

@@ -18,19 +18,6 @@
 #include "./internalFlash/bsp_internalFlash.h"   
 #include <stdio.h>
 
-/*准备写入的测试数据*/
-#define DATA_32                 ((uint32_t)0x00000000)
-
-
-/* Exported types ------------------------------------------------------------*/
-/* Exported constants --------------------------------------------------------*/
-/* 要擦除内部FLASH的起始地址 */
-#define FLASH_USER_START_ADDR   ADDR_FLASH_SECTOR_8   
-/* 要擦除内部FLASH的结束地址 */
-#define FLASH_USER_END_ADDR     ADDR_FLASH_SECTOR_12  
-
-static sector_t GetSector(uint32_t Address);
-
 /**
   * @brief  根据地址和长度擦除所需扇区
   * @param  start_address ：要写入的起始地址
@@ -88,7 +75,7 @@ int erasure_sector(uint32_t start_address, uint32_t len)
 /**
   * @brief  根据地址和长度擦除所需扇区
   * @param  start_address ：要写入的起始地址
-* @param  *data : 需要保存的数据
+  * @param  *data : 需要保存的数据
 	* @param  len ：长度
   * @retval 无
   */
@@ -184,7 +171,7 @@ int save_data_flash(uint32_t start_address, const void *data, uint32_t len)
   * @param  Address：地址
   * @retval 地址所在的sector
   */
-static sector_t GetSector(uint32_t Address)
+sector_t GetSector(uint32_t Address)
 {
   sector_t sector;
   

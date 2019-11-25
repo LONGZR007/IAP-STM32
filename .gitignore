@@ -1,4 +1,4 @@
-# Private settings
+﻿# Private settings
 private_settings.py
 
 # Compiled Object files
@@ -80,4 +80,7 @@ settings
 *.sim
 *.log
 *.ld
+
+# vs code
+.vscode
 

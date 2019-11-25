@@ -41,9 +41,10 @@ typedef struct
 #define ADDR_FLASH_SECTOR_23     ((uint32_t)0x081E0000) /* Base address of Sector 23, 128 Kbytes */
 
 
-int InternalFlash_Test(void);
+int erasure_sector(uint32_t start_address, uint32_t len);
+int flash_write_data(uint32_t start_address, const void *data, uint32_t len);
 int save_data_flash(uint32_t start_address, const void *data, uint32_t len);
-
+sector_t GetSector(uint32_t Address);
 
 
 #endif /* __INTERNAL_FLASH_H */
