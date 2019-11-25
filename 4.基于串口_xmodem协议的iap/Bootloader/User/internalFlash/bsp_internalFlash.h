@@ -42,7 +42,7 @@ typedef struct
 
 
 int InternalFlash_Test(void);
-int flash_write_data(uint32_t start_address, const void *data, uint32_t len);
+int save_data_flash(uint32_t start_address, const void *data, uint32_t len);
 
 
 

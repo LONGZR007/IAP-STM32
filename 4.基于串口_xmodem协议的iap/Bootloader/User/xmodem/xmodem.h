@@ -10,9 +10,11 @@
 #ifndef XMODEM_H_
 #define XMODEM_H_
 
-#include "uart.h"
-#include "flash.h"
-#include "stdbool.h"
+#include "stm32f4xx.h"
+#include <stdio.h>
+//#include "uart.h"
+//#include "flash.h"
+//#include "stdbool.h"
 
 /* Xmodem (128 bytes) packet format
  * Byte  0:       Header
@@ -32,6 +34,10 @@
 
 /* Maximum allowed errors (user defined). */
 #define X_MAX_ERRORS ((uint8_t)3u)
+
+/* 包头接收标志 */
+#define X_IS_PACKET     ((uint8_t)1u)
+#define X_NO_PACKET     ((uint8_t)0u)
 
 /* Sizes of the packets. */
 #define X_PACKET_128_SIZE   ((uint16_t)128u)
