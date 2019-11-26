@@ -28,11 +28,20 @@
  */
 int x_receive(volatile uint8_t *data, uint32_t len)
 {
-	while (data_rx_flag == 1)   // 等待数据接收完成
-	{}
+	uint32_t timeout = RECEIVE_TIMEOUT;
+	
+	while (data_rx_flag == 1 && timeout--)   // 等待数据接收完成
+	{
+		if (timeout == 0)
+		{
+			return -1;    // 超时错误
+		}
+	}
 	
 	/* 获取接收数据 */
 	data = get_rx_data();
+	
+	(void)data;
 		
 	if (len == get_rx_len())
 	{

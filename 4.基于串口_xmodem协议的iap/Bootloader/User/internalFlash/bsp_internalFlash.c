@@ -37,11 +37,17 @@ int erasure_sector(uint32_t start_address, uint32_t len)
   FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | 
                   FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR|FLASH_FLAG_PGSERR); 
 	
+	/* FLASH 解锁 ********************************/
+  /* 使能访问FLASH控制寄存器 */
+  FLASH_Unlock();
+	
 	if ((sector_inof.start_addr + sector_inof.size) - (start_address + len) > 0)    // 第一个扇区就足够存下数据
 	{
 		/* VoltageRange_3 以“字”的大小进行操作 */ 
     if (FLASH_EraseSector(sector_inof.number, VoltageRange_3) != FLASH_COMPLETE)    // 擦除相应扇区
     { 
+			/* 给FLASH上锁，防止内容被篡改*/
+			FLASH_Lock(); 
       /*擦除出错，返回，实际应用中可加入处理 */
 			return -1;
     }
@@ -58,6 +64,8 @@ int erasure_sector(uint32_t start_address, uint32_t len)
 			/* 擦除扇区 VoltageRange_3 以“字”的大小进行操作 */ 
 			if (FLASH_EraseSector(sector_inof.number, VoltageRange_3) != FLASH_COMPLETE)    // 擦除相应扇区
 			{ 
+				/* 给FLASH上锁，防止内容被篡改*/
+				FLASH_Lock(); 
 				/*擦除出错，返回，实际应用中可加入处理 */
 				return -1;
 			}
@@ -68,6 +76,9 @@ int erasure_sector(uint32_t start_address, uint32_t len)
 			
 		}while (sector_size >= len);          // 擦除的扇区可以存下所需的数据
 	}
+	
+	/* 给FLASH上锁，防止内容被篡改*/
+  FLASH_Lock(); 
 	
 	return 0;
 }
@@ -84,6 +95,10 @@ int flash_write_data(uint32_t start_address, const void *data, uint32_t len)
 	uint8_t *data_8 = (uint8_t *)data;
 	uint32_t address = start_address;
 	
+	/* FLASH 解锁 ********************************/
+  /* 使能访问FLASH控制寄存器 */
+  FLASH_Unlock();
+	
 	/* 以“字”的大小为单位写入数据 ******************************** */
 	address = start_address;
   while (len)
@@ -96,10 +111,16 @@ int flash_write_data(uint32_t start_address, const void *data, uint32_t len)
     }
     else
     {
+			/* 给FLASH上锁，防止内容被篡改*/
+			FLASH_Lock(); 
+			
       /*写入出错，返回，实际应用中可加入处理 */
 			return -1;
     }
   }
+	
+	/* 给FLASH上锁，防止内容被篡改*/
+  FLASH_Lock(); 
 	
 	return 0;
 }

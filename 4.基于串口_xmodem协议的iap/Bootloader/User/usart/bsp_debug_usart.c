@@ -106,6 +106,7 @@ void Debug_USART_Config(void)
   
 	/* 使能串口接收中断 */
 	USART_ITConfig(DEBUG_USART, USART_IT_RXNE, ENABLE);
+	USART_ITConfig(DEBUG_USART, USART_IT_IDLE, ENABLE);
 	
   /* 使能串口 */
   USART_Cmd(DEBUG_USART, ENABLE);
@@ -198,7 +199,9 @@ uint8_t *get_rx_data(void)
   */
 uint32_t get_rx_len(void)
 {
-  return data_rx_len;
+	uint32_t len = data_rx_len;
+	data_rx_len = 0;
+  return len;
 }
 
 /**
@@ -208,7 +211,7 @@ uint32_t get_rx_len(void)
   */
 void reset_rx_data(void)
 {
-  memset(data_rx_buff, 0, sizeof(data_rx_buff));    // 清除数据
+//  memset(data_rx_buff, 0, sizeof(data_rx_buff));    // 清除数据
   data_rx_len = 0;                                  // 重置计数
 }
 
@@ -219,14 +222,19 @@ void reset_rx_data(void)
   */
 void DEBUG_USART_IRQHandler(void)
 {
-	if(USART_GetITStatus(DEBUG_USART,USART_IT_RXNE)!=RESET)
+	if(USART_GetITStatus(DEBUG_USART, USART_IT_RXNE)!=RESET)
 	{		
     if (data_rx_len < RX_MAX_LEN)
     {
       data_rx_buff[data_rx_len++] = USART_ReceiveData(DEBUG_USART);
-      data_rx_flag = 1;         // 标记为接收
-      reset_sec_timestamp();    // 重置秒时间戳
+//      reset_sec_timestamp();    // 重置秒时间戳
     }
+	}
+	
+	if(USART_GetITStatus(DEBUG_USART, USART_IT_IDLE)!=RESET)
+	{		
+     data_rx_flag = 1;         // 标记为接收
+		USART_ClearITPendingBit(DEBUG_USART, USART_IT_IDLE);
 	}
 }
 

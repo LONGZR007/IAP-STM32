@@ -13,7 +13,7 @@
 
 /* 全局变量. */
 static uint8_t xmodem_packet_number = 1u;               /* 包计数. */
-static uint32_t xmodem_actual_flash_address = 0u;       /* 写入的地址. */
+static uint32_t xmodem_actual_flash_address = FLASH_APP_ADDR;       /* 写入的地址. */
 static uint8_t x_first_packet_received = X_IS_PACKET;   /* 是不是包头. */
 static uint32_t sector_size = 0;                        /* 扇区剩余大小. */
 
@@ -35,7 +35,6 @@ void xmodem_receive(void)
 
   x_first_packet_received = X_IS_PACKET;
   xmodem_packet_number = 1u;
-  xmodem_actual_flash_address = FLASH_APP_ADDR;
 
   /* 循环，直到没有任何错误(或者直到跳转到用户应用程序). */
   while (X_OK == status)
@@ -90,10 +89,11 @@ void xmodem_receive(void)
       case X_EOT:
         /* ACK, feedback to user (as a text), then jump to user application. */
         sector_size = 0;    // 复位扇区大小
+				xmodem_actual_flash_address = FLASH_APP_ADDR;    // 复位app地址
         (void)x_transmit_ch(X_ACK);
         (void)printf("\n\rFirmware updated!\n\r");
         (void)printf("Jumping to user application...\n\r");
-//        flash_jump_to_app();
+				iap_jump_app(FLASH_APP_ADDR);
         break;
       /* Abort from host. */
       case X_CAN:
@@ -174,7 +174,7 @@ static xmodem_status xmodem_handle_packet(uint8_t header)
   /* 当前扇区不够了擦除下一个. */
   if (sector_size <= size)
   {
-    sector_size += x_receive_flash_erasure(FLASH_APP_ADDR);
+    sector_size += x_receive_flash_erasure(xmodem_actual_flash_address + sector_size);
 
     if (0 == sector_size)
     {
@@ -211,7 +211,7 @@ static xmodem_status xmodem_handle_packet(uint8_t header)
       status |= X_ERROR_CRC;
     }
     /* 没有错误写入 flash. */
-    if (0 != x_receive_flash_writea(xmodem_actual_flash_address, (uint8_t *)&received_data[X_PACKET_DATA_INDEX], (uint32_t)size/4u))
+    if (0 != x_receive_flash_writea(xmodem_actual_flash_address, (uint8_t *)&received_data[X_PACKET_DATA_INDEX], (uint32_t)size))
     {
       /* Flashing error. */
       status |= X_ERROR_FLASH;
