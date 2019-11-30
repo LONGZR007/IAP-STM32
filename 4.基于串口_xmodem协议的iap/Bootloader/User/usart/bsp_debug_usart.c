@@ -216,6 +216,9 @@ void reset_rx_data(void)
   data_rx_len = 0;                                  // 重置计数
 }
 
+uint16_t lendata[120];
+uint16_t len = 0;
+
 /**
   * @brief  串口中断处理服务函数
   * @param  无
@@ -234,6 +237,7 @@ void DEBUG_USART_IRQHandler(void)
 	
 	if(USART_GetITStatus(DEBUG_USART, USART_IT_IDLE)!=RESET)
 	{		
+		lendata[len++] = data_rx_len;
     data_rx_flag = 1;         // 标记为接收
     USART_ReceiveData(DEBUG_USART);
 		USART_ClearITPendingBit(DEBUG_USART, USART_IT_IDLE);

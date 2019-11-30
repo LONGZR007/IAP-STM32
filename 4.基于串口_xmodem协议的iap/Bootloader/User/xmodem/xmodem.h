@@ -45,9 +45,9 @@
 #define X_PACKET_CRC_SIZE   ((uint16_t)2u)
 
 /* Relative (not counting the header) location of the packets. */
-#define X_PACKET_NUMBER_INDEX             ((uint16_t)0u)
-#define X_PACKET_NUMBER_COMPLEMENT_INDEX  ((uint16_t)1u)
-#define X_PACKET_DATA_INDEX               ((uint16_t)2u)
+#define X_PACKET_NUMBER_INDEX             ((uint16_t)1u)
+#define X_PACKET_NUMBER_COMPLEMENT_INDEX  ((uint16_t)2u)
+#define X_PACKET_DATA_INDEX               ((uint16_t)3u)
 
 /* Bytes defined by the protocol. */
 #define X_SOH ((uint8_t)0x01u)  /**< Start Of Header (128 bytes). */

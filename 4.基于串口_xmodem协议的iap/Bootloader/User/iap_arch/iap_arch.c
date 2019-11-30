@@ -42,11 +42,11 @@ int x_receive(uint8_t *data, uint32_t len)
 	data = get_rx_data();
 	
 //	(void)data;
-
-	if (len != get_rx_len())
-	{
-		return -1;    // 长度不正确返回错误
-	}
+//	get_rx_len();
+	// if (len != )
+	// {
+	// 	return -1;    // 长度不正确返回错误
+	// }
 		
 	return 0;
 }

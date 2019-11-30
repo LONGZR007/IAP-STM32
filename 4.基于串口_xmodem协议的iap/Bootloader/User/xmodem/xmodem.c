@@ -10,6 +10,7 @@
 #include "./xmodem/xmodem.h"
 #include "./boot_loader/boot_loader.h" 
 #include "./iap_arch/iap_arch.h"
+#include <string.h>
 
 /* 全局变量. */
 static uint8_t xmodem_packet_number = 1u;               /* 包计数. */
@@ -19,7 +20,7 @@ static uint32_t sector_size = 0;                        /* 扇区剩余大小. */
 
 /* 局部函数. */
 static uint16_t xmodem_calc_crc(uint8_t *data, uint16_t length);
-static xmodem_status xmodem_handle_packet(uint8_t size);
+static xmodem_status xmodem_handle_packet(uint8_t *size);
 static xmodem_status xmodem_error_handler(uint8_t *error_number, uint8_t max_error_number);
 
 /**
@@ -39,10 +40,10 @@ void xmodem_receive(void)
   /* 循环，直到没有任何错误(或者直到跳转到用户应用程序). */
   while (X_OK == status)
   {
-    uint8_t header = 0x00u;
+    uint8_t *header = 0x00u;
 
     /* 获取数据头. */
-    int receive_status = x_receive(&header, 1u);
+    int receive_status = x_receive(header, 1u);
 
     /* Spam the host (until we receive something) with ACSII "C", to notify it, we want to use CRC-16. */
     if ((0 != receive_status) && (X_IS_PACKET == x_first_packet_received))
@@ -61,7 +62,7 @@ void xmodem_receive(void)
 
     /* The header can be: SOH, STX, EOT and CAN. */
 		xmodem_status packet_status = X_ERROR;
-    switch(header)
+    switch(header[0])
     {
       /* 128或1024字节的数据. */
       case X_SOH:
@@ -143,15 +144,15 @@ static uint16_t xmodem_calc_crc(uint8_t *data, uint16_t length)
  * @param   header: SOH 或者 STX.
  * @return  status: 处理结果.
  */
-static xmodem_status xmodem_handle_packet(uint8_t header)
+static xmodem_status xmodem_handle_packet(uint8_t *header)
 {
   xmodem_status status = X_OK;
   uint16_t size = 0u;
-  if (X_SOH == header)
+  if (X_SOH == header[0])
   {
     size = X_PACKET_128_SIZE;
   }
-  else if (X_STX == header)
+  else if (X_STX == header[0])
   {
     size = X_PACKET_1024_SIZE;
   }
@@ -164,7 +165,9 @@ static xmodem_status xmodem_handle_packet(uint8_t header)
   uint8_t received_data[X_PACKET_1024_SIZE + X_PACKET_DATA_INDEX + X_PACKET_CRC_SIZE];
 
   /* 接收数据. */
-  int receive_status = x_receive(&received_data[0u], length);
+  int receive_status = 0;
+		
+	memcpy(&received_data[0u], header, length);
 	
   /* 最后两个字节是来自主机的CRC. */
   uint16_t crc_received = ((uint16_t)received_data[length-2u] << 8u) | ((uint16_t)received_data[length-1u]);
