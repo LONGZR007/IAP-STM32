@@ -106,7 +106,7 @@ void Debug_USART_Config(void)
   
 	/* 使能串口接收中断 */
 	USART_ITConfig(DEBUG_USART, USART_IT_RXNE, ENABLE);
-	USART_ITConfig(DEBUG_USART, USART_IT_IDLE, ENABLE);
+//	USART_ITConfig(DEBUG_USART, USART_IT_IDLE, ENABLE);
 	
   /* 使能串口 */
   USART_Cmd(DEBUG_USART, ENABLE);
@@ -189,7 +189,7 @@ void in(uint8_t *p)
   */
 uint8_t *get_rx_data(void)
 {
-  return data_rx_buff;
+  return (uint8_t *)data_rx_buff;
 }
 
 /**
@@ -231,18 +231,22 @@ void DEBUG_USART_IRQHandler(void)
     if (data_rx_len < RX_MAX_LEN)
     {
       data_rx_buff[data_rx_len++] = USART_ReceiveData(DEBUG_USART);
-//      reset_sec_timestamp();    // 重置秒时间戳
+			if (data_rx_flag == 0)
+			{
+				ms_timestamp_enable();
+			}
+      reset_ms_timestamp();    // 重置秒时间戳
     }
 	}
 	
-	if(USART_GetITStatus(DEBUG_USART, USART_IT_IDLE)!=RESET)
-	{		
-		lendata[len++] = data_rx_len;
-    data_rx_flag = 1;         // 标记为接收
-    USART_ReceiveData(DEBUG_USART);
-		USART_ClearITPendingBit(DEBUG_USART, USART_IT_IDLE);
-    USART_ClearFlag(DEBUG_USART, USART_IT_IDLE);            // 清除空闲中断
-	}
+//	if(USART_GetITStatus(DEBUG_USART, USART_IT_IDLE)!=RESET)
+//	{		
+//		lendata[len++] = data_rx_len;
+//    data_rx_flag = 1;         // 标记为接收
+//    USART_ReceiveData(DEBUG_USART);
+//		USART_ClearITPendingBit(DEBUG_USART, USART_IT_IDLE);
+//    USART_ClearFlag(DEBUG_USART, USART_IT_IDLE);            // 清除空闲中断
+//	}
 }
 
 /*********************************************END OF FILE**********************/

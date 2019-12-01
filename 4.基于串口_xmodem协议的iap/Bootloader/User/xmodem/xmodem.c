@@ -22,7 +22,8 @@ static uint32_t sector_size = 0;                        /* 扇区剩余大小. */
 static uint16_t xmodem_calc_crc(uint8_t *data, uint16_t length);
 static xmodem_status xmodem_handle_packet(uint8_t *size);
 static xmodem_status xmodem_error_handler(uint8_t *error_number, uint8_t max_error_number);
-
+#define RX_MAX_LEN     (128*1024)
+extern uint8_t data_rx_buff[RX_MAX_LEN];
 /**
  * @brief   这个函数是Xmodem协议的基础.
  *          接收数据并处理数据.
@@ -58,6 +59,7 @@ void xmodem_receive(void)
     else
     {
       /* Do nothing. */
+			header = data_rx_buff;
     }
 
     /* The header can be: SOH, STX, EOT and CAN. */
@@ -179,7 +181,7 @@ static xmodem_status xmodem_handle_packet(uint8_t *header)
   {
     sector_size += x_receive_flash_erasure(xmodem_actual_flash_address + sector_size);
 
-    if (0 == sector_size)
+    if (0 != sector_size)
     {
       x_first_packet_received = 1;
     }

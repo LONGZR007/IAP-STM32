@@ -16,9 +16,10 @@
   */
   
 #include "./tim/bsp_basic_tim.h"
+#include "./usart/bsp_debug_usart.h"
 
 /* 全局变量定义 */
-static uint32_t sec_timestamp = 0;    // 秒时间戳
+static uint32_t ms_timestamp = 0;    // 秒时间戳
 
  /**
   * @brief  基本定时器 TIMx,x[6,7]中断优先级配置
@@ -67,7 +68,7 @@ static void TIM_Mode_Config(void)
   //				PCLK1 = HCLK / 4 
   //				=> TIMxCLK=HCLK/2=SystemCoreClock/2=90MHz
 	// 设定定时器频率为=TIMxCLK/(TIM_Prescaler+1)=10000Hz
-  TIM_TimeBaseStructure.TIM_Prescaler = 30000 - 1;	
+  TIM_TimeBaseStructure.TIM_Prescaler = 30 - 1;	
 	
 	// 初始化定时器TIMx, x[2,3,4,5]
 	TIM_TimeBaseInit(BASIC_TIM, &TIM_TimeBaseStructure);
@@ -80,7 +81,7 @@ static void TIM_Mode_Config(void)
 	TIM_ITConfig(BASIC_TIM,TIM_IT_Update,ENABLE);
 	
 	// 使能定时器
-	TIM_Cmd(BASIC_TIM, ENABLE);	
+//	TIM_Cmd(BASIC_TIM, ENABLE);	
 }
 
 /**
@@ -96,13 +97,34 @@ void TIMx_Configuration(void)
 }
 
 /**
+  * @brief  启动定时器
+  * @param  无
+  * @retval 无
+  */
+void ms_timestamp_enable(void)
+{
+	reset_ms_timestamp();
+  TIM_Cmd(BASIC_TIM, ENABLE);	
+}
+
+/**
+  * @brief  停止定时器
+  * @param  无
+  * @retval 无
+  */
+void ms_timestamp_disable(void)
+{
+  TIM_Cmd(BASIC_TIM, DISABLE);	
+}
+
+/**
   * @brief  获取秒时间戳
   * @param  无
   * @retval 返回秒时间戳
   */
-uint32_t get_sec_timestamp(void)
+uint32_t get_ms_timestamp(void)
 {
-  return sec_timestamp;
+  return ms_timestamp;
 }
 
 /**
@@ -110,9 +132,9 @@ uint32_t get_sec_timestamp(void)
   * @param  无
   * @retval 无
   */
-void reset_sec_timestamp(void)
+void reset_ms_timestamp(void)
 {
-  sec_timestamp = 0;
+  ms_timestamp = 0;
 }
 
 /**
@@ -124,7 +146,12 @@ void  BASIC_TIM_IRQHandler (void)
 {
 	if ( TIM_GetITStatus( BASIC_TIM, TIM_IT_Update) != RESET ) 
 	{	
-		sec_timestamp++;
+		ms_timestamp++;
+		if (ms_timestamp > 60)
+		{
+			data_rx_flag = 1;
+			ms_timestamp_disable();
+		}
 		TIM_ClearITPendingBit(BASIC_TIM , TIM_IT_Update);  		 
 	}		 	
 }

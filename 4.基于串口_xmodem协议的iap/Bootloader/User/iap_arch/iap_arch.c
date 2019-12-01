@@ -26,7 +26,7 @@
  * @param   *len ：接收数据的长度
  * @return  接收数据的状态
  */
-int x_receive(uint8_t *data, uint32_t len)
+int x_receive(__IO uint8_t *data, uint32_t len)
 {
 	uint32_t timeout = RECEIVE_TIMEOUT;
 	
@@ -40,9 +40,8 @@ int x_receive(uint8_t *data, uint32_t len)
 	
 	/* 获取接收数据 */
 	data = get_rx_data();
-	
 //	(void)data;
-//	get_rx_len();
+	get_rx_len();
 	// if (len != )
 	// {
 	// 	return -1;    // 长度不正确返回错误

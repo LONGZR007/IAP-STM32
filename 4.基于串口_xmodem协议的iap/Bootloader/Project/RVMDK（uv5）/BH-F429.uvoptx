@@ -120,7 +120,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>DLGUARM</Key>
-          <Name>燩鵹8[?燩鵹8[?</Name>
+          <Name>燩痺@H?燩痺@H?</Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -189,6 +189,26 @@
           <count>6</count>
           <WinNumber>1</WinNumber>
           <ItemText>header</ItemText>
+        </Ww>
+        <Ww>
+          <count>7</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>header</ItemText>
+        </Ww>
+        <Ww>
+          <count>8</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>len,0x0A</ItemText>
+        </Ww>
+        <Ww>
+          <count>9</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>sector_inof</ItemText>
+        </Ww>
+        <Ww>
+          <count>10</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>sector_size</ItemText>
         </Ww>
       </WatchWindow1>
       <Tracepoint>

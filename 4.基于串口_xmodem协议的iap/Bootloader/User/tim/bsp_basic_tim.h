@@ -11,8 +11,10 @@
 
 
 void TIMx_Configuration(void);
-uint32_t get_sec_timestamp(void);
-void reset_sec_timestamp(void);
+void ms_timestamp_disable(void);
+void ms_timestamp_enable(void);
+uint32_t get_ms_timestamp(void);
+void reset_ms_timestamp(void);
 
 #endif /* __BASIC_TIM_H */
 
