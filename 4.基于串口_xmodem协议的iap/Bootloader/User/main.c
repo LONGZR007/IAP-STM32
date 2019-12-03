@@ -38,7 +38,7 @@ int main(void)
   /*初始化按键*/
   Key_GPIO_Config();
 	Debug_USART_Config();
-	TIMx_Configuration();
+//	TIMx_Configuration();
 	
 	printf(" IAP 演示 DEMO！\r\n");
 

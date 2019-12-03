@@ -120,7 +120,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>DLGUARM</Key>
-          <Name>燩痺@H?燩痺@H?</Name>
+          <Name>??燩Uw??燩Uw??</Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -193,7 +193,7 @@
         <Ww>
           <count>7</count>
           <WinNumber>1</WinNumber>
-          <ItemText>header</ItemText>
+          <ItemText>header[0]</ItemText>
         </Ww>
         <Ww>
           <count>8</count>

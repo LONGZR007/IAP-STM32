@@ -4,7 +4,7 @@
   * @author  long
   * @version V1.0
   * @date    2019-11-23
-  * @brief   内部FLASH读写测试范例
+  * @brief   xmodem 对外接口文件
   ******************************************************************************
   * @attention
   *
@@ -28,7 +28,7 @@
  */
 int x_receive(__IO uint8_t *data, uint32_t len)
 {
-	uint32_t timeout = RECEIVE_TIMEOUT;
+	__IO uint32_t timeout = RECEIVE_TIMEOUT;
 	
 	while (data_rx_flag == 0 && timeout--)   // 等待数据接收完成
 	{

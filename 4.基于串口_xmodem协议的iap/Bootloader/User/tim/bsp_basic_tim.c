@@ -147,7 +147,7 @@ void  BASIC_TIM_IRQHandler (void)
 	if ( TIM_GetITStatus( BASIC_TIM, TIM_IT_Update) != RESET ) 
 	{	
 		ms_timestamp++;
-		if (ms_timestamp > 60)
+		if (ms_timestamp > 10)
 		{
 			data_rx_flag = 1;
 			ms_timestamp_disable();

@@ -1,11 +1,19 @@
 /**
- * @file    xmodem.c
- * @author  Ferenc Nemeth
- * @date    21 Dec 2018
- * @brief   This module is the implementation of the Xmodem protocol.
- *
- *          Copyright (c) 2018 Ferenc Nemeth - https://github.com/ferenc-nemeth
- */
+  ******************************************************************************
+  * @file    xmodem.c
+  * @author  long
+  * @version V1.0
+  * @date    2019-xx-xx
+  * @brief   xmodem 协议（支持128B和1K）
+  ******************************************************************************
+  * @attention
+  *
+  * 实验平台:野火  STM32 F429 开发板  
+  * 论坛    :http://www.firebbs.cn
+  * 淘宝    :https://fire-stm32.taobao.com
+  *
+  ******************************************************************************
+  */
 
 #include "./xmodem/xmodem.h"
 #include "./boot_loader/boot_loader.h" 
@@ -46,7 +54,7 @@ void xmodem_receive(void)
     /* 获取数据头. */
     int receive_status = x_receive(header, 1u);
 
-    /* Spam the host (until we receive something) with ACSII "C", to notify it, we want to use CRC-16. */
+    /* 用ACSII "C"发送给上位机(直到我们收到一些东西), 告诉上位机我们要使用 CRC-16 . */
     if ((0 != receive_status) && (X_IS_PACKET == x_first_packet_received))
     {
       (void)x_transmit_ch(X_C);    // 给上位机返回 ACSII "C" ，告诉上位机将使用 CRC-16 
@@ -58,11 +66,11 @@ void xmodem_receive(void)
     }
     else
     {
-      /* Do nothing. */
-			header = data_rx_buff;
+      /* 没有错误. */
+//			header = data_rx_buff;
     }
 
-    /* The header can be: SOH, STX, EOT and CAN. */
+    /* 包头可以使: SOH, STX, EOT and CAN. */
 		xmodem_status packet_status = X_ERROR;
     switch(header[0])
     {
@@ -88,9 +96,9 @@ void xmodem_receive(void)
           status = xmodem_error_handler(&error_number, X_MAX_ERRORS);
         }
         break;
-      /* End of Transmission. */
+      /* 传输结束. */
       case X_EOT:
-        /* ACK, feedback to user (as a text), then jump to user application. */
+        /* ACK，反馈给上位机(以文本形式)，然后跳转到用户应用程序. */
         sector_size = 0;    // 复位扇区大小
 				xmodem_actual_flash_address = FLASH_APP_ADDR;    // 复位app地址
         (void)x_transmit_ch(X_ACK);
@@ -191,12 +199,12 @@ static xmodem_status xmodem_handle_packet(uint8_t *header)
     }
   }
 
-  /* Error handling and flashing. */
+  /* 错误处理或者写入 flash. */
   if (X_OK == status)
   {
     if (0 != receive_status)
     {
-      /* UART error. */
+      /* 传输错误. */
       status |= X_ERROR_UART;
     }
     if (xmodem_packet_number != received_data[X_PACKET_NUMBER_INDEX])
@@ -218,12 +226,12 @@ static xmodem_status xmodem_handle_packet(uint8_t *header)
     /* 没有错误写入 flash. */
     if (0 != x_receive_flash_writea(xmodem_actual_flash_address, (uint8_t *)&received_data[X_PACKET_DATA_INDEX], (uint32_t)size))
     {
-      /* Flashing error. */
+      /* Flash 写错误. */
       status |= X_ERROR_FLASH;
     }
   }
 
-  /* Raise the packet number and the address counters (if there wasn't any error). */
+  /* 增加包计数和地址，减少当前扇区的剩余数量 (如果没有任何错误的话). */
   if (X_OK == status)
   { 
     xmodem_packet_number++;
@@ -235,26 +243,26 @@ static xmodem_status xmodem_handle_packet(uint8_t *header)
 }
 
 /**
- * @brief   Handles the xmodem error.
- *          Raises the error counter, then if the number of the errors reached critical, do a graceful abort, otherwise send a NAK.
- * @param   *error_number:    Number of current errors (passed as a pointer).
- * @param   max_error_number: Maximal allowed number of errors.
- * @return  status: X_ERROR in case of too many errors, X_OK otherwise.
+ * @brief   处理xmodem错误.
+*          增加错误计数器，然后如果错误数量达到临界，则发送终止，否则发送一个 NAK.
+ * @param   *error_number:    当前错误数(作为指针传递).
+ * @param   max_error_number: 允许的最大错误数.
+ * @return  status: X_ERROR 达到错误数量上限, X_OK 继续接受.
  */
 static xmodem_status xmodem_error_handler(uint8_t *error_number, uint8_t max_error_number)
 {
   xmodem_status status = X_OK;
-  /* Raise the error counter. */
+  /* 错误计数器自增. */
   (*error_number)++;
-  /* If the counter reached the max value, then abort. */
+  /* 如果计数器达到最大值，则中止. */
   if ((*error_number) >= max_error_number)
   {
-    /* Graceful abort. */
+    /* 终止传输. */
     (void)x_transmit_ch(X_CAN);
     (void)x_transmit_ch(X_CAN);
     status = X_ERROR;
   }
-  /* Otherwise send a NAK for a repeat. */
+  /* 发送一个NAK进行重复. */
   else
   {
     (void)x_transmit_ch(X_NAK);
