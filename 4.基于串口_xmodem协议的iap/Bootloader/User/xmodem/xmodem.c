@@ -52,7 +52,7 @@ void xmodem_receive(void)
     uint8_t *header = 0x00u;
 
     /* 获取数据头. */
-    int receive_status = x_receive(header, 1u);
+    int receive_status = x_receive(&header, 1u);
 
     /* 用ACSII "C"发送给上位机(直到我们收到一些东西), 告诉上位机我们要使用 CRC-16 . */
     if ((0 != receive_status) && (X_IS_PACKET == x_first_packet_received))
