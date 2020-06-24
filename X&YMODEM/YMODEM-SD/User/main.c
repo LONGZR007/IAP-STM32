@@ -34,13 +34,13 @@ FATFS fs;													/* FatFs文件系统对象 */
   */
 int main(void)
 {
-	uint8_t *app_data = NULL;
-  uint32_t app_len = 0;
+//	uint8_t *app_data = NULL;
+//  uint32_t app_len = 0;
 	uint8_t update_flag = 0;
-  uint8_t count = 1;    // 要接收的文件计数
   FRESULT res_sd;                /* 文件操作结果 */
 	
   /*初始化按键*/
+  LED_GPIO_Config();
   Key_GPIO_Config();
 	Debug_USART_Config();
 //	TIMx_Configuration();
@@ -49,16 +49,11 @@ int main(void)
 	res_sd = f_mount(&fs, "0:" ,1);
 	if(res_sd!=FR_OK)
   {
+    LED1_ON;
     printf("！！SD卡挂载文件系统失败。(%d)\r\n",res_sd);
     printf("！！可能原因：SD卡初始化不成功。\r\n");
 		while(1);
   }
-  else
-  {
-    printf("》文件系统挂载成功\r\n");
-  }
-	
-	printf(" IAP 演示 DEMO！\r\n");
 
 	/* 轮询按键状态，若按键按下则反转LED */ 
 	while(1)
@@ -68,18 +63,13 @@ int main(void)
 			/* 获取接收数据 */
       update_flag = 1;
 		}
-    
-    if( Key_Scan(KEY2_GPIO_PORT,KEY2_PIN) == KEY_ON  )
-		{
-			/*LED2反转*/
-			count++;
-      printf("需要接收%d个文件\r\n", count);
-		}
 		
 		if (update_flag)
 		{
-			ymodem_receive(count);
+      LED2_ON;
+			ymodem_receive();
       update_flag = 0;
+      LED2_OFF;
 		}
 	}
 }

@@ -185,6 +185,11 @@
           <WinNumber>1</WinNumber>
           <ItemText>header[0]</ItemText>
         </Ww>
+        <Ww>
+          <count>6</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>file_len,0x0A</ItemText>
+        </Ww>
       </WatchWindow1>
       <MemoryWindow1>
         <Mm>
