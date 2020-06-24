@@ -48,6 +48,9 @@ int main(void)
     printf("！！可能原因：SD卡初始化不成功。\r\n");
 		while(1);
   }
+  while(1)
+  printf("！！可能原因：SD卡初始化不成功。\r\n");
+  
 
 	/* 轮询按键状态，若按键按下则反转LED */ 
 	while(1)

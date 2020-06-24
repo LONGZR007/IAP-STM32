@@ -32,6 +32,12 @@ static int get_receive_data(uint8_t **data, uint32_t len);
 static void reset_recv_len(void);
 static uint32_t get_recv_len(void);
 
+void y_delay(void)
+{
+  __IO uint32_t d = 0xFFFFF;
+  while(d--);
+}
+
 /**
  * @brief   这个函数是Xmodem协议的基础.
  *          接收数据并处理数据.
@@ -46,6 +52,8 @@ void ymodem_receive(void)
 
   y_first_packet_received = Y_NO_PACKET;
   ymodem_packet_number = 0u;
+  
+  (void)y_transmit_ch(Y_C);    // 给上位机返回 ACSII "C" ，告诉上位机将使用 CRC-16 
 
   /* 循环，直到没有任何错误(或者或者所有文件接收完成). */
   while (Y_OK == status)
@@ -84,6 +92,11 @@ void ymodem_receive(void)
         if (Y_OK == packet_status)
         {
           (void)y_transmit_ch(Y_ACK);
+          if (y_first_packet_received == Y_NO_PACKET)
+          {
+            y_delay();
+            y_transmit_ch(Y_C);
+          }
         }
         /* 如果错误与flash相关，则立即将错误计数器设置为最大值 (立即终止传输). */
         else if (Y_ERROR_FLASH == packet_status)
@@ -115,8 +128,9 @@ void ymodem_receive(void)
           ymodem_packet_number = 0;
           receive_file_callback(file_ptr);
           file_ptr = 0;
-
           eot_num = 0;
+          y_delay();
+          (void)y_transmit_ch(Y_C);    // 给上位机返回 ACSII "C" ，开启下一次传输
         }
         else
         {
@@ -192,21 +206,31 @@ static ymodem_status ymodem_handle_packet(uint8_t *header)
     status = Y_ERROR;
   }
   uint16_t length = size + Y_PACKET_DATA_INDEX + Y_PACKET_CRC_SIZE;
+
+#if 1    // 0:不拷贝可以加快传输速度，不过不建议这样做
   uint8_t received_data[Y_PACKET_1024_SIZE + Y_PACKET_DATA_INDEX + Y_PACKET_CRC_SIZE];
 
+	memcpy(&received_data[0u], header, length);
+#else
+  uint8_t *received_data = header;
+#endif
   /* 接收数据. */
   int receive_status = 0;
-		
-	memcpy(&received_data[0u], header, length);
-	
-  /* 最后两个字节是来自主机的CRC. */
-  uint16_t crc_received = ((uint16_t)received_data[length-2u] << 8u) | ((uint16_t)received_data[length-1u]);
-  /* 校验. */
-  uint16_t crc_calculated = ymodem_calc_crc(&received_data[Y_PACKET_DATA_INDEX], size);
 
   /* 错误处理或者写入 flash. */
   if (Y_OK == status)
   {
+    #if 1    // 0:不校验可以加加快传输速度，不过不建议这样做
+    /* 最后两个字节是来自主机的CRC. */
+    uint16_t crc_received = ((uint16_t)received_data[length-2u] << 8u) | ((uint16_t)received_data[length-1u]);
+    /* 校验. */
+    uint16_t crc_calculated = ymodem_calc_crc(&received_data[Y_PACKET_DATA_INDEX], size);
+    if (crc_calculated != crc_received)
+    {
+      /* 计算的CRC和接收的CRC不同. */
+      status |= Y_ERROR_CRC;
+    }
+  #endif
     if (0 != receive_status)
     {
       /* 传输错误. */
@@ -224,12 +248,6 @@ static ymodem_status ymodem_handle_packet(uint8_t *header)
       /* 包号和包号补数之和不是255. */
       /* 总和应该总是255. */
       status |= Y_ERROR_NUMBER;
-    }
-    
-    if (crc_calculated != crc_received)
-    {
-      /* 计算的CRC和接收的CRC不同. */
-      status |= Y_ERROR_CRC;
     }
     
     if (received_data[Y_PACKET_NUMBER_INDEX] == 0x00 && y_first_packet_received == Y_NO_PACKET)    // 第一个包
