@@ -12,31 +12,25 @@
 #include <string.h>
 
 /* 外部函数 */
-int burn_catalog_flash(uint8_t *data, uint32_t size);
-int burn_res_flash(uint8_t *data, uint32_t size);
+int burn_catalog_flash(y_uint8_t *data, y_uint32_t size);
+int burn_res_flash(y_uint8_t *data, y_uint32_t size);
 
 /* 全局变量. */
-static uint8_t recv_buf[Y_PROT_FRAME_LEN_RECV];                     /* 接收数据缓冲区 */
-static uint32_t recv_len;                                           /* 接收到数据的长度 */
-static uint8_t ymodem_packet_number = 0u;                           /* 包计数. */
-static uint8_t y_first_packet_received = Y_IS_PACKET;               /* 是不是包头. */
+static y_uint8_t recv_buf[Y_PROT_FRAME_LEN_RECV];                     /* 接收数据缓冲区 */
+static y_uint32_t recv_len;                                           /* 接收到数据的长度 */
+static y_uint8_t ymodem_packet_number = 0u;                           /* 包计数. */
+static y_uint8_t y_first_packet_received = Y_IS_PACKET;               /* 是不是包头. */
 static void *file_ptr = 0;
 
 /* 局部函数. */
-static uint16_t ymodem_calc_crc(uint8_t *data, uint16_t length);
-static ymodem_status ymodem_handle_packet(uint8_t *header);
-static ymodem_status ymodem_error_handler(uint8_t *error_number, uint8_t max_error_number);
-static uint16_t get_active_length(uint8_t *data, uint16_t len);
-static uint32_t get_file_len(uint8_t *data);
-static int get_receive_data(uint8_t **data, uint32_t len);
+static y_uint16_t ymodem_calc_crc(y_uint8_t *data, y_uint16_t length);
+static ymodem_status ymodem_handle_packet(y_uint8_t *header);
+static ymodem_status ymodem_error_handler(y_uint8_t *error_number, y_uint8_t max_error_number);
+static y_uint16_t get_active_length(y_uint8_t *data, y_uint16_t len);
+static y_uint32_t get_file_len(y_uint8_t *data);
+static int get_receive_data(y_uint8_t **data, y_uint32_t len);
 static void reset_recv_len(void);
-static uint32_t get_recv_len(void);
-
-void y_delay(void)
-{
-  __IO uint32_t d = 0xFFFFF;
-  while(d--);
-}
+static y_uint32_t get_recv_len(void);
 
 /**
  * @brief   这个函数是Xmodem协议的基础.
@@ -47,8 +41,8 @@ void y_delay(void)
 void ymodem_receive(void)
 {
   volatile ymodem_status status = Y_OK;
-  uint8_t error_number = 0u;
-  static uint8_t eot_num = 0;     /* 收到 EOT 的次数 */
+  y_uint8_t error_number = 0u;
+  static y_uint8_t eot_num = 0;     /* 收到 EOT 的次数 */
 
   y_first_packet_received = Y_NO_PACKET;
   ymodem_packet_number = 0u;
@@ -58,7 +52,7 @@ void ymodem_receive(void)
   /* 循环，直到没有任何错误(或者或者所有文件接收完成). */
   while (Y_OK == status)
   {
-    uint8_t *header = 0x00u;
+    y_uint8_t *header = 0x00u;
 
     /* 获取数据头. */
     int receive_status = get_receive_data(&header, 1u);
@@ -94,7 +88,6 @@ void ymodem_receive(void)
           (void)y_transmit_ch(Y_ACK);
           if (y_first_packet_received == Y_NO_PACKET)
           {
-            y_delay();
             y_transmit_ch(Y_C);
           }
         }
@@ -129,7 +122,7 @@ void ymodem_receive(void)
           receive_file_callback(file_ptr);
           file_ptr = 0;
           eot_num = 0;
-          y_delay();
+
           (void)y_transmit_ch(Y_C);    // 给上位机返回 ACSII "C" ，开启下一次传输
         }
         else
@@ -158,14 +151,14 @@ void ymodem_receive(void)
  * @param   length: 数据的大小，128字节或1024字节.
  * @return  status: 计算CRC.
  */
-static uint16_t ymodem_calc_crc(uint8_t *data, uint16_t length)
+static y_uint16_t ymodem_calc_crc(y_uint8_t *data, y_uint16_t length)
 {
-  uint16_t crc = 0u;
+  y_uint16_t crc = 0u;
   while (length)
   {
       length--;
-      crc = crc ^ ((uint16_t)*data++ << 8u);
-      for (uint8_t i = 0u; i < 8u; i++)
+      crc = crc ^ ((y_uint16_t)*data++ << 8u);
+      for (y_uint8_t i = 0u; i < 8u; i++)
       {
           if (crc & 0x8000u)
           {
@@ -185,11 +178,11 @@ static uint16_t ymodem_calc_crc(uint8_t *data, uint16_t length)
  * @param   header: SOH 或者 STX.
  * @return  status: 处理结果.
  */
-static ymodem_status ymodem_handle_packet(uint8_t *header)
+static ymodem_status ymodem_handle_packet(y_uint8_t *header)
 {
   ymodem_status status = Y_OK;
-  uint16_t size = 0u;
-  static uint32_t file_len = 0;
+  y_uint16_t size = 0u;
+  static y_uint32_t file_len = 0;
   char file_name[50];
   
   if (Y_SOH == header[0])
@@ -205,14 +198,14 @@ static ymodem_status ymodem_handle_packet(uint8_t *header)
     /* 错误的类型. */
     status = Y_ERROR;
   }
-  uint16_t length = size + Y_PACKET_DATA_INDEX + Y_PACKET_CRC_SIZE;
+  y_uint16_t length = size + Y_PACKET_DATA_INDEX + Y_PACKET_CRC_SIZE;
 
 #if 1    // 0:不拷贝可以加快传输速度，不过不建议这样做
-  uint8_t received_data[Y_PACKET_1024_SIZE + Y_PACKET_DATA_INDEX + Y_PACKET_CRC_SIZE];
+  y_uint8_t received_data[Y_PACKET_1024_SIZE + Y_PACKET_DATA_INDEX + Y_PACKET_CRC_SIZE];
 
 	memcpy(&received_data[0u], header, length);
 #else
-  uint8_t *received_data = header;
+  y_uint8_t *received_data = header;
 #endif
   /* 接收数据. */
   int receive_status = 0;
@@ -220,11 +213,11 @@ static ymodem_status ymodem_handle_packet(uint8_t *header)
   /* 错误处理或者写入 flash. */
   if (Y_OK == status)
   {
-    #if 1    // 0:不校验可以加加快传输速度，不过不建议这样做
+  #if 1    // 0:不校验可以加加快传输速度，不过不建议这样做
     /* 最后两个字节是来自主机的CRC. */
-    uint16_t crc_received = ((uint16_t)received_data[length-2u] << 8u) | ((uint16_t)received_data[length-1u]);
+    y_uint16_t crc_received = ((y_uint16_t)received_data[length-2u] << 8u) | ((y_uint16_t)received_data[length-1u]);
     /* 校验. */
-    uint16_t crc_calculated = ymodem_calc_crc(&received_data[Y_PACKET_DATA_INDEX], size);
+    y_uint16_t crc_calculated = ymodem_calc_crc(&received_data[Y_PACKET_DATA_INDEX], size);
     if (crc_calculated != crc_received)
     {
       /* 计算的CRC和接收的CRC不同. */
@@ -260,7 +253,7 @@ static ymodem_status ymodem_handle_packet(uint8_t *header)
       }
       else
       {
-        file_len = get_file_len((uint8_t *)&received_data[Y_PACKET_DATA_INDEX]);
+        file_len = get_file_len((y_uint8_t *)&received_data[Y_PACKET_DATA_INDEX]);
         if (receive_nanme_size_callback(file_ptr, file_name, file_len) != 0)     // 调用接收完成回调函数
         {
           /* 硬件错误. */
@@ -273,7 +266,7 @@ static ymodem_status ymodem_handle_packet(uint8_t *header)
       if (file_len == 0xFFFFFFFF)    // 不是有效的长度
       {
         /* file_len 不是有效的数值，判断数据是 0x1A 那么就丢弃数据 */
-        size = get_active_length((uint8_t *)&received_data[Y_PACKET_DATA_INDEX], size);        // 获取有效的长度
+        size = get_active_length((y_uint8_t *)&received_data[Y_PACKET_DATA_INDEX], size);        // 获取有效的长度
       }
       
       if (file_len < size)    /* 最后一帧了，并且数据没有size这么大 */
@@ -313,7 +306,7 @@ static ymodem_status ymodem_handle_packet(uint8_t *header)
  * @param   max_error_number: 允许的最大错误数.
  * @return  status: Y_ERROR 达到错误数量上限, Y_OK 继续接受.
  */
-static ymodem_status ymodem_error_handler(uint8_t *error_number, uint8_t max_error_number)
+static ymodem_status ymodem_error_handler(y_uint8_t *error_number, y_uint8_t max_error_number)
 {
   ymodem_status status = Y_OK;
   /* 错误计数器自增. */
@@ -341,7 +334,7 @@ static ymodem_status ymodem_error_handler(uint8_t *error_number, uint8_t max_err
  * @param   len: 数据长度.
  * @return  有效的数据长度.
  */
-static uint16_t get_active_length(uint8_t *data, uint16_t len)
+static y_uint16_t get_active_length(y_uint8_t *data, y_uint16_t len)
 {
   while(len)
   {
@@ -364,11 +357,11 @@ static uint16_t get_active_length(uint8_t *data, uint16_t len)
  * @param   len: 数据长度.
  * @return  找到则返回文件长度，否则返回0xFFFFFFFF.
  */
-static uint32_t get_file_len(uint8_t *data)
+static y_uint32_t get_file_len(y_uint8_t *data)
 {
-  uint32_t len = 0xFFFFFFFF;
-  uint16_t count = 0;
-  uint16_t index = 0;
+  y_uint32_t len = 0xFFFFFFFF;
+  y_uint16_t count = 0;
+  y_uint16_t index = 0;
 
   /* 找文件大小的起始位置 */
   for (count=0; count<128; count++)
@@ -412,12 +405,14 @@ static uint32_t get_file_len(uint8_t *data)
  * @param   *len ：接收数据的长度
  * @return  接收数据的状态
  */
-static int get_receive_data(uint8_t **data, uint32_t len)
+static int get_receive_data(y_uint8_t **data, y_uint32_t len)
 {
-	__IO uint32_t timeout = Y_RECEIVE_TIMEOUT;
-  uint8_t *data_temp = 0;
-  uint16_t max_len = 1;
-	
+	volatile y_uint32_t timeout = Y_RECEIVE_TIMEOUT;
+  y_uint8_t *data_temp = 0;
+  y_uint16_t max_len = 1;
+  y_uint16_t data_len[2] = {128, 1024};
+  
+#if TIMEOUT_CONFIG
 	while (timeout--)   // 等待数据接收完成
 	{
     if (get_recv_len() >= max_len)
@@ -425,14 +420,10 @@ static int get_receive_data(uint8_t **data, uint32_t len)
       if (max_len != 1)
         break;
       
-      data_temp = recv_buf;     // 获取接收到的数据
-      if (*data_temp == Y_SOH)       // 第一个是SOH，说明本次需要接收133个字节
+      data_temp = recv_buf;                                 // 获取接收到的数据
+      if (*data_temp == Y_SOH || *data_temp == Y_STX)       // 第一个是SOH，说明本次需要接收133个字节
       {
-        max_len = 128 + 3 + 2;
-      }
-      else if (*data_temp == Y_STX)
-      {
-        max_len = 1024 + 3 + 2;
+        max_len = data_len[*data_temp - 1] + 3 + 2;             // 根据不同的头记录不同的长度
       }
       else
       {
@@ -445,6 +436,32 @@ static int get_receive_data(uint8_t **data, uint32_t len)
 			return -1;    // 超时错误
 		}
 	}
+#else
+  y_uint32_t tickstart = y_get_tick();
+  while (1)   // 等待数据接收完成
+	{
+    if (y_get_tick() - tickstart > timeout)    // 检查是否超时
+    {
+			return -1;    // 超时错误
+		}
+    
+    if (get_recv_len() >= max_len)
+    {
+      if (max_len != 1)
+        break;
+      
+      data_temp = recv_buf;                                 // 获取接收到的数据
+      if (*data_temp == Y_SOH || *data_temp == Y_STX)       // 第一个是SOH，说明本次需要接收133个字节
+      {
+        max_len = data_len[*data_temp] + 3 + 2;             // 根据不同的头记录不同的长度
+      }
+      else
+      {
+        break;
+      }
+    }
+	}
+#endif
 	
 	/* 获取接收数据 */
 	*data = recv_buf;
@@ -464,11 +481,11 @@ static void reset_recv_len(void)
 }
 
 /**
- * @brief   复位数据接收长度
+ * @brief   获取数据接收长度
  * @param   void.
  * @return  接收到数据的长度.
  */
-static uint32_t get_recv_len(void)
+static y_uint32_t get_recv_len(void)
 {
   return recv_len;
 }
@@ -479,7 +496,7 @@ static uint32_t get_recv_len(void)
  * @param   data_len: 数据的大小
  * @return  void.
  */
-void ymodem_data_recv(uint8_t *data, uint16_t data_len)
+void ymodem_data_recv(y_uint8_t *data, y_uint16_t data_len)
 {
   if (recv_len + data_len >= Y_PROT_FRAME_LEN_RECV)
     recv_len = 0;
@@ -489,15 +506,27 @@ void ymodem_data_recv(uint8_t *data, uint16_t data_len)
 }
 
 /**
+ * @brief   获取毫秒时间戳.
+ * @param   void
+ * @return  时间戳
+ */
+__weak y_uint32_t y_get_tick(void)
+{
+	
+	return 0;
+}
+
+
+/**
  * @brief   Ymodem 发送一个字符的接口.
  * @param   ch ：发送的数据
  * @return  返回发送状态
  */
-__weak int y_transmit_ch(uint8_t ch)
+__weak int y_transmit_ch(y_uint8_t ch)
 {
 	Y_UNUSED(ch);
 	
-	return 0;
+	return -1;
 }
 
 /**
@@ -507,7 +536,7 @@ __weak int y_transmit_ch(uint8_t ch)
  * @param   file_size: 文件大小，若为0xFFFFFFFF，则说明大小无效.
  * @return  返回写入的结果，0：成功，-1：失败.
  */
-__weak int receive_nanme_size_callback(void *ptr, char *file_name, uint32_t file_size)
+__weak int receive_nanme_size_callback(void *ptr, char *file_name, y_uint32_t file_size)
 {
   Y_UNUSED(ptr);
   Y_UNUSED(file_name);
@@ -524,7 +553,7 @@ __weak int receive_nanme_size_callback(void *ptr, char *file_name, uint32_t file
  * @param   file_size: 文件大小，若为0xFFFFFFFF，则说明大小无效.
  * @return  返回写入的结果，0：成功，-1：失败.
  */
-__weak int receive_file_data_callback(void *ptr, char *file_data, uint32_t w_size)
+__weak int receive_file_data_callback(void *ptr, char *file_data, y_uint32_t w_size)
 {
   Y_UNUSED(ptr);
   Y_UNUSED(file_data);

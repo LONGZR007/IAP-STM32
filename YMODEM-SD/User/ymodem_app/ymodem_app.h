@@ -1,5 +1,5 @@
-#ifndef XMODEM_H_
-#define XMODEM_H_
+#ifndef _YMODEM_APP_H_
+#define _YMODEM_APP_H_
 
 #include "stm32f4xx.h"
 
