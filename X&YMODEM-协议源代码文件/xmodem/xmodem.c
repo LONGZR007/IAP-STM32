@@ -30,7 +30,7 @@ static x_uint32_t get_recv_len(void);
 /**
  * @brief   这个函数是Xmodem协议的基础.
  *          接收数据并处理数据.
- * @param   rec_num:需要接收的文件数量
+ * @param   void
  * @return  0:文件接收成功 -1:文件接收失败
  */
 int xmodem_receive(void)
