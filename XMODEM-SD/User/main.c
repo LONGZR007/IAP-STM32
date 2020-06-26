@@ -19,7 +19,7 @@
 #include "./led/bsp_led.h"
 #include "./key/bsp_key.h" 
 #include "./usart/bsp_debug_usart.h"
-#include "./ymodem/ymodem.h"
+#include "./xmodem/xmodem.h"
 #include "./FATFS/ff.h"
 
 FATFS fs;													/* FatFs文件系统对象 */
@@ -61,7 +61,10 @@ int main(void)
 		if (update_flag)
 		{
       LED2_ON;
-			ymodem_receive();
+			if (xmodem_receive() != 0)
+      {
+        LED1_ON;
+      }
       update_flag = 0;
       LED2_OFF;
 		}

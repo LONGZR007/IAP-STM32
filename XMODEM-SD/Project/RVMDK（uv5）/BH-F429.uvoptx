@@ -160,6 +160,11 @@
           <WinNumber>1</WinNumber>
           <ItemText>recv_buf</ItemText>
         </Ww>
+        <Ww>
+          <count>1</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>fnew</ItemText>
+        </Ww>
       </WatchWindow1>
       <MemoryWindow1>
         <Mm>
@@ -828,8 +833,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\User\ymodem\ymodem.c</PathWithFileName>
-      <FilenameWithoutPath>ymodem.c</FilenameWithoutPath>
+      <PathWithFileName>..\..\User\sdio\bsp_sdio_sd.c</PathWithFileName>
+      <FilenameWithoutPath>bsp_sdio_sd.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -840,8 +845,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\User\sdio\bsp_sdio_sd.c</PathWithFileName>
-      <FilenameWithoutPath>bsp_sdio_sd.c</FilenameWithoutPath>
+      <PathWithFileName>..\..\User\xmodem\xmodem.c</PathWithFileName>
+      <FilenameWithoutPath>xmodem.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -852,8 +857,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\User\ymodem_app\ymodem_app.c</PathWithFileName>
-      <FilenameWithoutPath>ymodem_app.c</FilenameWithoutPath>
+      <PathWithFileName>..\..\User\xmodem_app\xmodem_app.c</PathWithFileName>
+      <FilenameWithoutPath>xmodem_app.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>

@@ -30,7 +30,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_it.h"
 #include <stdio.h>
-#include "./ymodem/ymodem.h"
+#include "./xmodem/xmodem.h"
 #include "./usart/bsp_debug_usart.h"
 
 /** @addtogroup STM32F429I_DISCOVERY_Examples
@@ -164,7 +164,7 @@ void DEBUG_USART_IRQHandler(void)
 	if(USART_GetITStatus(DEBUG_USART, USART_IT_RXNE) != RESET)
 	{		
     temp[0] = USART_ReceiveData(DEBUG_USART);
-    ymodem_data_recv(temp, 1);
+    xmodem_data_recv(temp, 1);
 	}
 }
 

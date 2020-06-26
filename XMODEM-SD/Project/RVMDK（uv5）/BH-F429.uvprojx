@@ -685,19 +685,19 @@
               <FilePath>..\..\User\usart\bsp_debug_usart.c</FilePath>
             </File>
             <File>
-              <FileName>ymodem.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\User\ymodem\ymodem.c</FilePath>
-            </File>
-            <File>
               <FileName>bsp_sdio_sd.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\User\sdio\bsp_sdio_sd.c</FilePath>
             </File>
             <File>
-              <FileName>ymodem_app.c</FileName>
+              <FileName>xmodem.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\User\ymodem_app\ymodem_app.c</FilePath>
+              <FilePath>..\..\User\xmodem\xmodem.c</FilePath>
+            </File>
+            <File>
+              <FileName>xmodem_app.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\User\xmodem_app\xmodem_app.c</FilePath>
             </File>
           </Files>
         </Group>

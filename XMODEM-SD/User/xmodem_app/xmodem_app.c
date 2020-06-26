@@ -8,8 +8,8 @@
   ******************************************************************************
 ***/
 
-#include "./ymodem/ymodem.h"
-#include "./ymodem_app/ymodem_app.h"
+#include "./xmodem/xmodem.h"
+#include "./xmodem_app/xmodem_app.h"
 #include "./usart/bsp_debug_usart.h"
 #include "./FATFS/ff.h"
 
@@ -17,13 +17,15 @@
 static FIL fnew;												/* 文件对象 */
 static FRESULT res_sd;                  /* 文件操作结果 */
 static UINT fnum;            					  /* 文件成功读写数量 */
+static uint8_t recv_flag = 0;
+#define RECV_FILE_NAME     "recv_file.txt"
 
 /**
  * @brief   Ymodem 发送一个字符的接口.
  * @param   ch ：发送的数据
  * @return  返回发送状态
  */
-int y_transmit_ch(uint8_t ch)
+int x_transmit_ch(uint8_t ch)
 {
 	Usart_SendByte(DEBUG_USART, ch);
 	
@@ -37,15 +39,12 @@ int y_transmit_ch(uint8_t ch)
  * @param   file_size: 文件大小，若为0xFFFFFFFF，则说明大小无效.
  * @return  返回写入的结果，0：成功，-1：失败.
  */
-int receive_nanme_size_callback(void *ptr, char *file_name, uint32_t file_size)
+int open_file_receive(void *ptr, char *file_name)
 {
   char buff[50];
-  FIL **f_ptr = ptr;    /* 文件对象 */
-  
-  ptr = &fnew;
   
   sprintf(buff, "0:/%s", file_name);
-  res_sd = f_open(*f_ptr, buff, FA_OPEN_APPEND | FA_WRITE );
+  res_sd = f_open(&fnew, buff, FA_CREATE_ALWAYS | FA_WRITE );
   if ( res_sd != FR_OK )
   {	
     /* Flash 错误. */
@@ -64,13 +63,21 @@ int receive_nanme_size_callback(void *ptr, char *file_name, uint32_t file_size)
  */
 int receive_file_data_callback(void *ptr, char *file_data, uint32_t w_size)
 {
-  FIL **f_ptr = ptr;    /* 文件对象 */
+  if (recv_flag == 0)
+  {
+    recv_flag = 1;    // 标记正在接收一个文件
+    if(open_file_receive(&fnew, RECV_FILE_NAME) == -1)
+    {	
+      /* Flash 错误. */
+      return -1;
+    }
+  }
   
-  res_sd=f_write(*f_ptr, (uint8_t *)file_data, (uint32_t)w_size, &fnum);
+  res_sd=f_write(&fnew, (uint8_t *)file_data, (uint32_t)w_size, &fnum);
   if(res_sd != FR_OK)
   {
     /* 不再读写，关闭文件 */
-    f_close(*f_ptr);
+    f_close(&fnew);
     /* Flash 错误. */
     return -1;
   }
@@ -85,8 +92,8 @@ int receive_file_data_callback(void *ptr, char *file_data, uint32_t w_size)
  */
 int receive_file_callback(void *ptr)
 {
-  FIL **f_ptr = ptr;    /* 文件对象 */
-  f_close(*f_ptr);
+  f_close(&fnew);
+  recv_flag = 0;
   
   return 0;
 }

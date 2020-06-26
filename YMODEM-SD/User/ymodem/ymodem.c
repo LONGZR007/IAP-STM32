@@ -107,7 +107,7 @@ void ymodem_receive(void)
         break;
       /* 传输结束. */
       case Y_EOT:
-        /* ACK，反馈给上位机(以文本形式)，然后跳转到用户应用程序. */
+        /* ACK，反馈给上位机(以文本形式). */
         if (++eot_num > 1)
         {
           y_transmit_ch(Y_ACK);
