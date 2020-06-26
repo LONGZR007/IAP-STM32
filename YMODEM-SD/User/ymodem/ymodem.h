@@ -82,7 +82,7 @@ typedef enum {
   
 /***************************** 对外函数 ***************************************/
 /* 用户调用 */
-void ymodem_receive(void);
+y_uint16_t ymodem_receive(void);
 void ymodem_data_recv(y_uint8_t *data, y_uint16_t data_len);
 
 /* 用户需实现 */

@@ -160,6 +160,11 @@
           <WinNumber>1</WinNumber>
           <ItemText>recv_buf</ItemText>
         </Ww>
+        <Ww>
+          <count>1</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>ymodem_file_number</ItemText>
+        </Ww>
       </WatchWindow1>
       <MemoryWindow1>
         <Mm>

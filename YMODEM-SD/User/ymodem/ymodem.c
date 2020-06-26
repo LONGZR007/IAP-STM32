@@ -15,6 +15,7 @@
 static y_uint8_t recv_buf[Y_PROT_FRAME_LEN_RECV];                     /* 接收数据缓冲区 */
 static y_uint32_t recv_len;                                           /* 接收到数据的长度 */
 static y_uint8_t ymodem_packet_number = 0u;                           /* 包计数. */
+static y_uint16_t ymodem_file_number = 0u;                            /* 文件计数. */
 static y_uint8_t y_first_packet_received = Y_IS_PACKET;               /* 是不是包头. */
 static void *file_ptr = 0;
 
@@ -32,16 +33,17 @@ static y_uint32_t get_recv_len(void);
  * @brief   这个函数是Ymodem协议的基础.
  *          接收数据并处理数据.
  * @param   rec_num:需要接收的文件数量
- * @return  无
+ * @return  返回接收到的文件数量，如果最高位是1则说明接收异常，否则正常
  */
-void ymodem_receive(void)
+y_uint16_t ymodem_receive(void)
 {
   volatile ymodem_status status = Y_OK;
   y_uint8_t error_number = 0u;
-  static y_uint8_t eot_num = 0;     /* 收到 EOT 的次数 */
+  y_uint8_t eot_num = 0;     /* 收到 EOT 的次数 */
 
   y_first_packet_received = Y_NO_PACKET;
   ymodem_packet_number = 0u;
+  ymodem_file_number = 0u;
   
   (void)y_transmit_ch(Y_C);    // 给上位机返回 ACSII "C" ，告诉上位机将使用 CRC-16 
 
@@ -62,11 +64,6 @@ void ymodem_receive(void)
     else if ((0 != receive_status) && (Y_IS_PACKET == y_first_packet_received))
     {
       status = ymodem_error_handler(&error_number, Y_MAY_ERRORS);
-    }
-    else
-    {
-      /* 没有错误. */
-//			header = data_rx_buff;
     }
 
     /* 包头可以使: SOH, STX, EOT and CAN. */
@@ -97,7 +94,7 @@ void ymodem_receive(void)
         else if (Y_EOY == packet_status)
         {
           (void)y_transmit_ch(Y_ACK);
-          return;
+          return ymodem_file_number;    // 文件接收正常,返回接收到的数里
         }
         /* 处理数据包时出错，要么发送一个 NAK，要么执行传输中止. */
         else
@@ -118,6 +115,7 @@ void ymodem_receive(void)
           receive_file_callback(file_ptr);
           file_ptr = 0;
           eot_num = 0;
+          ymodem_file_number++;
 
           (void)y_transmit_ch(Y_C);    // 给上位机返回 ACSII "C" ，开启下一次传输
         }
@@ -139,6 +137,13 @@ void ymodem_receive(void)
         break;
     }
   }
+  
+  /* 复位 */
+  receive_file_callback(file_ptr);
+  file_ptr = 0;
+  ymodem_file_number |= (1 << 15);
+  
+  return ymodem_file_number;    // 文件接收出错,返回接收到的数里和错误信息
 }
 
 /**

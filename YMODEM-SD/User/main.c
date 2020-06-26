@@ -61,7 +61,11 @@ int main(void)
 		if (update_flag)
 		{
       LED2_ON;
-			ymodem_receive();
+      LED1_OFF;
+			if (ymodem_receive() >> 15 & 1)
+      {
+        LED1_ON;    // 接收出现错误
+      }
       update_flag = 0;
       LED2_OFF;
 		}
