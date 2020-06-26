@@ -19,37 +19,9 @@
 #include <stdio.h>
 #include "./usart/bsp_debug_usart.h"
 #include "./internalFlash/bsp_internalFlash.h" 
+#include "./boot_loader/boot_loader.h" 
 
-/**
- * @brief   Xmodem 接收数据的接口.
- * @param   *data ：接收数据
- * @param   *len ：接收数据的长度
- * @return  接收数据的状态
- */
-
-int x_receive(__IO uint8_t **data, uint32_t len)
-{
-	__IO uint32_t timeout = RECEIVE_TIMEOUT;
-	
-	while (data_rx_flag == 0 && timeout--)   // 等待数据接收完成
-	{
-		if (timeout == 0)
-		{
-			return -1;    // 超时错误
-		}
-	}
-	
-	/* 获取接收数据 */
-	*data = get_rx_data();
-//	(void)data;
-	get_rx_len();
-	// if (len != )
-	// {
-	// 	return -1;    // 长度不正确返回错误
-	// }
-		
-	return 0;
-}
+static uint32_t xmodem_actual_flash_address = FLASH_APP_ADDR;       /* 写入的地址. */
 
 /**
  * @brief   Xmodem 发送一个字符的接口.
@@ -98,6 +70,53 @@ int x_receive_flash_writea(uint32_t start_address, const void *data, uint32_t le
   {
     return -1;    // 写入失败
   }
-  
 }
+
+/**
+ * @brief   文件数据接收完成回调.
+ * @param   *ptr: 控制句柄.
+ * @param   *file_name: 文件名字.
+ * @param   file_size: 文件大小，若为0xFFFFFFFF，则说明大小无效.
+ * @return  返回写入的结果，0：成功，-1：失败.
+ */
+int receive_file_data_callback(void *ptr, char *file_data, uint32_t w_size)
+{
+  static uint32_t sector_size = 0;                                    /* 扇区剩余大小. */
+  
+  /* 当前扇区不够了擦除下一个. */
+  if (sector_size <= w_size)
+  {
+    sector_size += x_receive_flash_erasure(xmodem_actual_flash_address + sector_size);
+
+    if (0 == sector_size)
+    {
+      return -1;
+    }
+  }
+  
+  if (x_receive_flash_writea(xmodem_actual_flash_address, file_data, w_size) == 0)    // 
+  {
+    xmodem_actual_flash_address += w_size;
+    return 0;
+  }
+  else 
+  {
+    return -1;
+  }
+}
+
+/**
+ * @brief   文件接收完成回调.
+ * @param   *ptr: 控制句柄.
+ * @return  返回写入的结果，0：成功，-1：失败.
+ */
+int receive_file_callback(void *ptr)
+{
+//  printf("开始运行 App！\r\n");
+//	iap_jump_app(FLASH_APP_ADDR);
+  
+  return 0;
+}
+
+
 

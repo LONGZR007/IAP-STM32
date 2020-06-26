@@ -31,13 +31,12 @@
   */
 int main(void)
 {
-	uint8_t *app_data = NULL;
-  uint32_t app_len = 0;
 	uint8_t update_flag = 0;
 	
   /*初始化按键*/
   Key_GPIO_Config();
 	Debug_USART_Config();
+  LED_GPIO_Config();
 //	TIMx_Configuration();
 	
 	printf(" IAP 演示 DEMO！\r\n");
@@ -54,13 +53,25 @@ int main(void)
     if( Key_Scan(KEY2_GPIO_PORT,KEY2_PIN) == KEY_ON  )
 		{
 			/*LED2反转*/
-			printf("开始运行 App！\r\n");
-			iap_jump_app(FLASH_APP_ADDR);
+			save_data_flash(FLASH_APP_ADDR, 0, 1152);
+      iap_jump_app(FLASH_APP_ADDR);
 		}
 		
 		if (update_flag)
 		{
-			xmodem_receive();
+      LED2_ON;
+			if (xmodem_receive() == 0)
+      { 
+        LED2_OFF;
+        printf("开始运行 App！\r\n");
+        iap_jump_app(FLASH_APP_ADDR);
+      }
+      else
+      {
+        LED3_ON;
+      }
+      LED2_OFF;
+      update_flag = 0;
 		}
 	}
 }

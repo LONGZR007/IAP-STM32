@@ -140,20 +140,20 @@ int save_data_flash(uint32_t start_address, const void *data, uint32_t len)
 	
 	/* FLASH 解锁 ********************************/
   /* 使能访问FLASH控制寄存器 */
-  FLASH_Unlock();
-	
-	if (erasure_sector(address, len))    // 擦除所需扇区
-	{
-		return -1;    // 擦除出错，返回
-	}
-	
-	if (flash_write_data(start_address, data, len))    // 擦除所需扇区
-	{
-		return -1;    // 写数据出错，返回
-	}
+//  FLASH_Unlock();
+//	
+//	if (erasure_sector(address, len))    // 擦除所需扇区
+//	{
+//		return -1;    // 擦除出错，返回
+//	}
+//	
+//	if (flash_write_data(start_address, data, len))    // 写入扇区
+//	{
+//		return -1;    // 写数据出错，返回
+//	}
 
-	/* 给FLASH上锁，防止内容被篡改*/
-  FLASH_Lock(); 
+//	/* 给FLASH上锁，防止内容被篡改*/
+//  FLASH_Lock(); 
 	
 	address = start_address;
 	
@@ -163,12 +163,12 @@ int save_data_flash(uint32_t start_address, const void *data, uint32_t len)
   while (address < start_address + data_len)
   {
     uw_data = *(__IO uint8_t*)address;
-		
-    if (uw_data != *data_v++)
-    {
-			printf("地址 ： 0x%X 实际内容是 ：0x%X  希望的内容是 ：0x%X \r\n", address, uw_data, *data_v);
-      uwMemoryProgramStatus++;  
-    }
+printf("地址 ： 0x%X 实际内容是 ：0x%X\r\n", address, uw_data);
+//    if (uw_data != *data_v++)
+//    {
+//			printf("地址 ： 0x%X 实际内容是 ：0x%X  希望的内容是 ：0x%X \r\n", address, uw_data, *data_v);
+//      uwMemoryProgramStatus++;  
+//    }
 
     address++;
   }  

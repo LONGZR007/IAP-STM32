@@ -17,12 +17,8 @@
   
 #include <string.h>
 #include "./usart/bsp_debug_usart.h"
-#include "./tim/bsp_basic_tim.h"
 
 #define RX_MAX_LEN     (128*1024)
-uint8_t data_rx_buff[RX_MAX_LEN];
-uint32_t data_rx_len = 0;
-uint8_t data_rx_flag = 0;
 
  /**
   * @brief  配置嵌套向量中断控制器NVIC
@@ -106,7 +102,6 @@ void Debug_USART_Config(void)
   
 	/* 使能串口接收中断 */
 	USART_ITConfig(DEBUG_USART, USART_IT_RXNE, ENABLE);
-	USART_ITConfig(DEBUG_USART, USART_IT_IDLE, ENABLE);
 	
   /* 使能串口 */
   USART_Cmd(DEBUG_USART, ENABLE);
@@ -175,78 +170,6 @@ int fgetc(FILE *f)
 		while (USART_GetFlagStatus(DEBUG_USART, USART_FLAG_RXNE) == RESET);
 
 		return (int)USART_ReceiveData(DEBUG_USART);
-}
-
-void in(uint8_t *p)
-{
-	
-}
-
-/**
-  * @brief  获取接收到的数据信息
-  * @param  data：接收数据的指针
-  * @retval 接收到的数据长度
-  */
-uint8_t *get_rx_data(void)
-{
-  return (uint8_t *)data_rx_buff;
-}
-
-/**
-  * @brief  获取接收到的数据信息
-  * @param  data：接收数据的指针
-  * @retval 接收到的数据长度
-  */
-uint32_t get_rx_len(void)
-{
-	__IO uint32_t len = data_rx_len;
-	data_rx_len = 0;
-  data_rx_flag = 0;
-  return len;
-}
-
-/**
-  * @brief  复位接收数据缓冲区
-  * @param  无
-  * @retval 无
-  */
-void reset_rx_data(void)
-{
-//  memset(data_rx_buff, 0, sizeof(data_rx_buff));    // 清除数据
-  data_rx_len = 0;                                  // 重置计数
-}
-
-uint16_t lendata[120];
-uint16_t len = 0;
-
-/**
-  * @brief  串口中断处理服务函数
-  * @param  无
-  * @retval 无
-  */
-void DEBUG_USART_IRQHandler(void)
-{
-	if(USART_GetITStatus(DEBUG_USART, USART_IT_RXNE)!=RESET)
-	{		
-    if (data_rx_len < RX_MAX_LEN)
-    {
-      data_rx_buff[data_rx_len++] = USART_ReceiveData(DEBUG_USART);
-//			if (data_rx_flag == 0)
-//			{
-//				ms_timestamp_enable();
-//			}
-//      reset_ms_timestamp();    // 重置秒时间戳
-    }
-	}
-	
-	if(USART_GetITStatus(DEBUG_USART, USART_IT_IDLE)!=RESET)
-	{		
-//		lendata[len++] = data_rx_len;
-    data_rx_flag = 1;         // 标记为接收
-    USART_ReceiveData(DEBUG_USART);
-		USART_ClearITPendingBit(DEBUG_USART, USART_IT_IDLE);
-    USART_ClearFlag(DEBUG_USART, USART_IT_IDLE);            // 清除空闲中断
-	}
 }
 
 /*********************************************END OF FILE**********************/

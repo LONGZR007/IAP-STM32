@@ -30,6 +30,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_it.h"
 #include <stdio.h>
+#include "./xmodem/xmodem.h"
+#include "./usart/bsp_debug_usart.h"
+#include "./led/bsp_led.h"
 
 /** @addtogroup STM32F429I_DISCOVERY_Examples
   * @{
@@ -66,6 +69,7 @@ void NMI_Handler(void)
   */
 void HardFault_Handler(void)
 {
+  LED1_ON;
 	printf("HardFault\n");
   /* Go to infinite loop when Hard Fault exception occurs */
   while (1)
@@ -150,6 +154,21 @@ void SysTick_Handler(void)
 /**
   * @}
   */ 
+  
+/**
+  * @brief  串口中断处理服务函数
+  * @param  无
+  * @retval 无
+  */
+void DEBUG_USART_IRQHandler(void)
+{
+  uint8_t temp[1];
+	if(USART_GetITStatus(DEBUG_USART, USART_IT_RXNE) != RESET)
+	{		
+    temp[0] = USART_ReceiveData(DEBUG_USART);
+    xmodem_data_recv(temp, 1);
+	}
+}
 
 /**
   * @}
