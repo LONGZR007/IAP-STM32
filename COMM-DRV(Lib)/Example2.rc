@@ -1,0 +1,103 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+#include "comm.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "#include ""comm.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "#include ""example2.rc2""\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON1               ICON                    "Example2.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENU MENU 
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&Re-Open Port",               ID_REOPENPORT
+        POPUP "&Send File"
+        BEGIN
+            MENUITEM "&ASCII",                      ID_SENDFILE_ASCII
+            MENUITEM "X&Modem Checksum",            ID_SENDFILE_XMODEMCHECKSUM
+            MENUITEM "&XModem",                     ID_SENDFILE_XMODEM
+            MENUITEM "&YModem",                     ID_SENDFILE_YMODEM
+            MENUITEM "&ZModem",                     ID_SENDFILE_ZMODEM
+        END
+        POPUP "&Get File"
+        BEGIN
+            MENUITEM "&ASCII",                      ID_GETFILE_ASCII
+            MENUITEM "X&Modem Checksum",            ID_GETFILE_XMODEMCHECKSUM
+            MENUITEM "&XModem CRC",                 ID_GETFILE_XMODEM
+            MENUITEM "&YModem",                     ID_GETFILE_YMODEM
+            MENUITEM "&ZModem",                     ID_GETFILE_ZMODEM
+        END
+    END
+    MENUITEM SEPARATOR
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#include "example2.rc2"
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

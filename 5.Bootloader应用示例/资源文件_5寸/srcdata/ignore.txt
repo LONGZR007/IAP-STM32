@@ -1,0 +1,11 @@
+#忽略文件，记载在此处的文件不烧录
+#可忽略文件夹，若是多重目录，使用‘/’连接
+#如dir/subdir
+
+__野火F429_srcdata.txt
+__F429_srcdata.txt
+Readme.txt
+flash资源表说明.xlsx
+FLASH_note.xlsx
+
+#结束

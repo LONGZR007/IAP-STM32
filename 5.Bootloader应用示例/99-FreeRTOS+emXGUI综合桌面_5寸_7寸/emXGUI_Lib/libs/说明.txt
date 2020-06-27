@@ -1,0 +1,9 @@
+本目录是emXGUI的LIB文件
+
+
+emXGUI100_MDK_xxx.lib 
+核心API库文件，MKD版，XXX内核
+
+x_libc_MDK_xxx.lib
+重写的C标准库文件，MKD版，XXX内核
+为方便移植至不同平台，emXGUI使用的C库都是x_libc中实现的
