@@ -81,6 +81,7 @@ static void BSP_Init(void)
 	 * 优先级分组只需要分组一次即可，以后如果有其他的任务需要用到中断，
 	 * 都统一用这个优先级分组，千万不要再分组，切忌。
 	 */
+  
 	NVIC_PriorityGroupConfig( NVIC_PriorityGroup_4 );
 	
 	/* LED 初始化 */
@@ -128,6 +129,8 @@ static void BSP_Init(void)
   ****************************************************************/
 int main(void)
 {	
+  SCB->VTOR = 0x8004000 | 0; /* Vector Table Relocation in Internal FLASH */
+  
   BaseType_t xReturn = pdPASS;/* 定义一个创建信息返回值，默认为pdPASS */
   
   /* 开发板硬件初始化 */

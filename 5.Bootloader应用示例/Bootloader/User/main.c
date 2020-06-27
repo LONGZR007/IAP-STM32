@@ -73,14 +73,14 @@ int main(void)
   LCD_SetColors(LCD_COLOR_WHITE,LCD_COLOR_BLACK);
   
   LCD_SetFont(&Font16x24);
-
-	LCD_DisplayStringLine_EN_CH(LINE(1),(uint8_t* )"                 emXGUI 引导装载程序");
   
   /* 按住 KEY1 启动，进入接收应用文件模式，完成后直接跳转到应用程序 */
-  if( Key_Scan(KEY1_GPIO_PORT,KEY1_PIN) == KEY_ON  )
+  if(GPIO_ReadInputDataBit(KEY1_GPIO_PORT, KEY1_PIN) == KEY_ON)
   {
     /* 获取 .bin 文件接收数据 */
     LED2_ON;
+    LCD_DisplayStringLine_EN_CH(LINE(1),(uint8_t* )"                 emXGUI 引导装载程序");
+    LCD_DisplayStringLine_EN_CH(LINE(3), (uint8_t*)"正在等待文件传输开始！");
     if (xmodem_receive() == 0)
     { 
       LED2_OFF;

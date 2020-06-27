@@ -18,6 +18,7 @@ typedef enum
   ID_SETTINGS_EXIT = 0x1000,      // 退出按钮
   ID_SETTINGS_DET,                // 关于开发板
 	ID_SETTINGS_THEME,              // 主题选择
+  ID_SETTINGS_UPDATE,             // 系统升级
   ID_DET_EXIT,                // 关于开发板
   /***************** 文本控件 ID 值 *********************/
   ID_SETTINGS_TITLE,              // 标题
@@ -32,7 +33,7 @@ typedef struct{
 	set_id_t id;         // 按钮ID
 }set_icon_t;
 
-#define ICON_BTN_NUM     3     // 按钮数量
+#define ICON_BTN_NUM     4     // 按钮数量
 
 //图标管理数组
 const set_icon_t set_icon[] = {
@@ -41,8 +42,9 @@ const set_icon_t set_icon[] = {
   {L"-",           {740,  22,  36,  36}, ID_SETTINGS_EXIT},      // 0. 退出按钮
   {L"关于开发板",  { 18,  93, 782,  36}, ID_SETTINGS_DET},       // 1. 关于开发板
   {L"1",           {725, 142,  65,  30}, ID_SETTINGS_THEME},     // 2. 主题选择
-  {L"设置",        {100, 0,  600,  80}, ID_SETTINGS_TITLE},      // 3. 
-  {L"主题",        {18, 135, 100, 42}, ID_SETTINGS_THEMEINFO},        // 4. 
+  {L"系统升级",    {18, 178, 782,  36},   ID_SETTINGS_UPDATE},   // 3. 
+  {L"设置",        {100, 0,  600,  80},  ID_SETTINGS_TITLE},      // 4. 
+  {L"主题",        {18, 135, 100, 42},   ID_SETTINGS_THEMEINFO},   // 5. 
 };
 
 extern uint8_t Theme_Flag;   // 主题标志
@@ -471,6 +473,28 @@ static LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						CreateWindow(&wcex, L"---", WS_VISIBLE, 
                          rc.x, rc.y, rc.w, rc.h, hwnd, ID_DET_WIN, NULL, NULL);
           }
+          else if (id == ID_SETTINGS_UPDATE)
+          {
+            WNDCLASS wcex;
+						RECT rc;
+
+						wcex.Tag = WNDCLASS_TAG;
+						wcex.Style = CS_HREDRAW | CS_VREDRAW;
+						wcex.lpfnWndProc = (WNDPROC)DetWinProc;
+						wcex.cbClsExtra = 0;
+						wcex.cbWndExtra = 0;
+						wcex.hInstance = NULL;
+						wcex.hIcon = NULL;
+						wcex.hCursor = NULL;
+
+						rc.x = 0;
+						rc.y = 0;
+						rc.w = GUI_XSIZE;
+						rc.h = GUI_YSIZE;
+
+						CreateWindow(&wcex, L"---", WS_VISIBLE, 
+                         rc.x, rc.y, rc.w, rc.h, hwnd, ID_DET_WIN, NULL, NULL);
+          }
           else if (id == ID_SETTINGS_THEME)
           {
             WCHAR wbuf[3];
@@ -506,7 +530,7 @@ static LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             exit_owner_draw(ds);
             return TRUE;
          }
-         else if(ds->ID == ID_SETTINGS_DET)
+         else if(ds->ID == ID_SETTINGS_DET || ds->ID == ID_SETTINGS_UPDATE)
          {
             det_button_OwnerDraw(ds);
             return TRUE;

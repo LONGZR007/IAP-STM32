@@ -152,7 +152,7 @@ static struct __obj_list menu_list_1[] = {
       L"ÒÔÌ«Íø",	   NULL,	  L"Q", RGB_WHITE,				(void(*)(void *))GUI_NetworkDLG_Dialog,
       L"·äÃùÆ÷",     NULL,	  L"i", RGB_WHITE,				(void(*)(void *))GUI_Beeper_Dialog,
 
-      L"RGB²ÊµÆ",	   NULL,	  L"L", RGB_WHITE,				(void(*)(void *))GUI_LED_DIALOG,
+      L"RGB²ÊµÆ",	   NULL,	  L"L", RGB_WHITE,				(void(*)(void *))dummy,//GUI_LED_DIALOG,
       L"ÉãÏñÍ·",	   NULL,	  L"M", RGB_WHITE, 				(void(*)(void *))GUI_Camera_DIALOG,
  
       L"Í¼Æ¬ä¯ÀÀÆ÷", NULL,   	L"G", RGB_WHITE,				(void(*)(void *))GUI_PicViewer_Dialog,
@@ -165,7 +165,7 @@ static struct __obj_list menu_list_1[] = {
       L"¶þÎ¬Âë",	   NULL,	  L"V", RGB_WHITE,				(void(*)(void *))GUI_Camera_QRCode_DIALOG,
 
       L"Â¼Òô»ú",	   NULL,	  L"Y", RGB_WHITE,		  	(void(*)(void *))GUI_RECORDER_DIALOG,
-      L"»ù´¡¿Ø¼þ",	 NULL,	  L"F", RGB_WHITE,		  	(void(*)(void *))GUI_DEMO_RadiaMenu,
+      L"»ù´¡¿Ø¼þ",	 NULL,	  L"F", RGB_WHITE,		  	(void(*)(void *))dummy,//GUI_DEMO_RadiaMenu,
 //      L"ÓÎÏ·",	     NULL,	  L"S", RGB_WHITE,				(void(*)(void *))NES_Simulator,
 //      L"WiFi",       NULL,	  L"P", RGB_WHITE,				(void(*)(void *)),
       L"FlashWriter",NULL,	  L"b", RGB_WHITE,			  (void(*)(void *))GUI_RES_Writer_Dialog,

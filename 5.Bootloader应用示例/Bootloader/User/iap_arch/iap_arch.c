@@ -19,7 +19,8 @@
 #include <stdio.h>
 #include "./usart/bsp_debug_usart.h"
 #include "./internalFlash/bsp_internalFlash.h" 
-#include "./boot_loader/boot_loader.h" 
+#include "./boot_loader/boot_loader.h"
+#include "./lcd/bsp_lcd.h"
 
 static uint32_t xmodem_actual_flash_address = FLASH_APP_ADDR;       /* 写入的地址. */
 
@@ -81,7 +82,9 @@ int x_receive_flash_writea(uint32_t start_address, const void *data, uint32_t le
  */
 int receive_file_data_callback(void *ptr, char *file_data, uint32_t w_size)
 {
-  static uint32_t sector_size = 0;                                    /* 扇区剩余大小. */
+  static uint32_t sector_size = 0;    /* 扇区剩余大小. */
+  static uint32_t recv_size = 0;    /* 扇区剩余大小. */
+  uint8_t buff[128];
   
   /* 当前扇区不够了擦除下一个. */
   if (sector_size <= w_size)
@@ -94,9 +97,12 @@ int receive_file_data_callback(void *ptr, char *file_data, uint32_t w_size)
     }
   }
   
-  if (x_receive_flash_writea(xmodem_actual_flash_address, file_data, w_size) == 0)    // 
+  if (flash_write_data(xmodem_actual_flash_address, (uint8_t *)file_data, w_size) == 0)    // 写入数据
   {
     xmodem_actual_flash_address += w_size;
+    recv_size += w_size;
+    sprintf((char*)buff, "                 已接收：%d字节！", recv_size);
+    LCD_DisplayStringLine_EN_CH(LINE(3), buff);
     return 0;
   }
   else 
@@ -114,6 +120,7 @@ int receive_file_callback(void *ptr)
 {
 //  printf("开始运行 App！\r\n");
 //	iap_jump_app(FLASH_APP_ADDR);
+  LCD_DisplayStringLine_EN_CH(LINE(5), "                 应用程序接收完成！");
   
   return 0;
 }

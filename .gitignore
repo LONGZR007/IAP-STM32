@@ -53,9 +53,14 @@ tmp/
 JLink*.*
 
 # Output directories
-Output
+#Output
 Lst
 Obj
+
+#Do not ignore output folder, ignore other files
+!/Output
+/Output/*
+!/Output/*.sct
 
 # cscope
 cscope.*
