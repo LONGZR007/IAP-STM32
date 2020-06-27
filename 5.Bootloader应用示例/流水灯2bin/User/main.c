@@ -26,6 +26,8 @@ void Delay(__IO u32 nCount);
   */
 int main(void)
 {
+	SCB->VTOR = 0x8010000 | 0; /* Vector Table Relocation in Internal FLASH */
+
 	/* LED ¶Ë¿Ú³õÊ¼»¯ */
 	LED_GPIO_Config();
 
