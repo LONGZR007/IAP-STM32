@@ -10,8 +10,7 @@
 #include "./font/fonts.h"
 
 /*把这个宏设置成非0值 液晶屏使用RGB888色彩，若为0则使用RGB565色彩*/
-#define LCD_RGB_888  0
-
+#define LCD_RGB_888 0
 
 
 #if  LCD_RGB_888
@@ -409,15 +408,6 @@ void LCD_DispString_EN_CH( uint16_t usX, uint16_t usY, const uint8_t * pStr );
 void LCD_DisplayStringLine_EN_CH(uint16_t Line, uint8_t *ptr);
 void LCD_DispString_EN_CH ( uint16_t usX, uint16_t usY, const uint8_t * pStr );
 
-/*缩放*/
-void LCD_DisplayStringLineEx(uint16_t x, //显示的x点
-														 uint16_t y, //显示的y点
-														 uint16_t Font_width,	//要显示的字体宽度，英文字符在此基础上/2。注意为偶数
-														 uint16_t Font_Heig,	//要显示的字体高度，注意为偶数
-														 uint8_t *ptr,				//显示的字符内容
-														 uint16_t DrawModel);  //是否反色显示
-
-
 
 /**
   * @}
@@ -813,7 +803,7 @@ void     LCD_Triangle(pPoint Points, uint16_t PointCount);
 void     LCD_FillTriangle(uint16_t x1, uint16_t x2, uint16_t x3, uint16_t y1, uint16_t y2, uint16_t y3);
 void     LCD_CtrlLinesWrite(GPIO_TypeDef* GPIOx, uint16_t CtrlPins, BitAction BitVal);
 void     PutPixel(int16_t x, int16_t y);
-void 		 LCD_DisplayStringLineEx(uint16_t x,uint16_t y,uint16_t Font_width,uint16_t Font_Heig,uint8_t *ptr,uint16_t DrawModel);
+
 
 
 

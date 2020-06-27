@@ -24,6 +24,13 @@
 #include "./internalFlash/bsp_internalFlash.h"  
 #include "./xmodem/xmodem.h"
 #include "./lcd/bsp_lcd.h"
+#include "./flash/bsp_spi_flash.h"
+
+sFONT Font16x24 = {
+  0,
+  16, /* Width */
+  24, /* Height */
+};
 
 /**
   * @brief  主函数
@@ -32,13 +39,14 @@
   */
 int main(void)
 {
-	uint8_t update_flag = 0;
+	uint8_t update_flag[1];
 	
   /*初始化按键*/
   Key_GPIO_Config();
 	Debug_USART_Config();
   LED_GPIO_Config();
-	/*初始化液晶屏*/
+  
+  /*初始化液晶屏*/
   LCD_Init();
   LCD_LayerInit();
   LTDC_Cmd(ENABLE);
@@ -54,40 +62,50 @@ int main(void)
 	LCD_Clear(LCD_COLOR_BLACK);
 	/*经过LCD_SetLayer(LCD_FOREGROUND_LAYER)函数后，
 	以下液晶操作都在前景层刷新，除非重新调用过LCD_SetLayer函数设置背景层*/
+  
+  /*使用不透明前景层*/
+	LCD_SetLayer(LCD_FOREGROUND_LAYER);  
+  LCD_SetTransparency(0xff);
 	
-	LCD_DisplayStringLine_EN_CH(LINE(1),(uint8_t* )"emXGUI引导装载程序");
+  LCD_Clear(LCD_COLOR_BLACK);	/* 清屏，显示全黑 */
 
-	/* 轮询按键状态，若按键按下则反转LED */ 
-	while(1)
-	{
-		if( Key_Scan(KEY1_GPIO_PORT,KEY1_PIN) == KEY_ON  )
-		{
-			/* 获取接收数据 */
-      update_flag = 1;
-		}
-    
-    if( Key_Scan(KEY2_GPIO_PORT,KEY2_PIN) == KEY_ON  )
-		{
-			/*LED2反转*/
-      iap_jump_app(FLASH_APP_ADDR);
-		}
-		
-		if (update_flag)
-		{
-      LED2_ON;
-			if (xmodem_receive() == 0)
-      { 
-        LED2_OFF;
-        iap_jump_app(FLASH_APP_ADDR);
-      }
-      else
-      {
-        LED3_ON;
-      }
+	/*设置字体颜色及字体的背景颜色(此处的背景不是指LCD的背景层！注意区分)*/
+  LCD_SetColors(LCD_COLOR_WHITE,LCD_COLOR_BLACK);
+  
+  LCD_SetFont(&Font16x24);
+
+	LCD_DisplayStringLine_EN_CH(LINE(1),(uint8_t* )"                 emXGUI 引导装载程序");
+  
+  /* 按住 KEY1 启动，进入接收应用文件模式，完成后直接跳转到应用程序 */
+  if( Key_Scan(KEY1_GPIO_PORT,KEY1_PIN) == KEY_ON  )
+  {
+    /* 获取 .bin 文件接收数据 */
+    LED2_ON;
+    if (xmodem_receive() == 0)
+    { 
       LED2_OFF;
-      update_flag = 0;
-		}
-	}
+      iap_jump_app(FLASH_APP_ADDR);
+    }
+    else
+    {
+      LED3_ON;
+    }
+    LED2_OFF;
+  }
+  
+  /* 读更新标志 */
+  SPI_FLASH_BufferRead(update_flag, 0, sizeof(update_flag));
+  
+  if (update_flag[0] == 0)
+  {
+    /* 有新的 APP 开始更新应用程序 */
+    
+  }
+  
+  /* 不更新直接跳转到应用程序 */
+  iap_jump_app(FLASH_APP_ADDR);
+
+	while(1);
 }
 
 

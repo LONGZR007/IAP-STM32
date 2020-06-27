@@ -79,11 +79,12 @@
 /**
   * @}
   */ 
-  
+#if 0
 
 /** @defgroup FONTS_Private_Variables
   * @{
   */
+#if 0
 const uint16_t ASCII16x24_Table [] = {
 /** 
   * @brief        Space ' '  
@@ -656,6 +657,7 @@ const uint16_t ASCII16x24_Table [] = {
          0x10F0, 0x1FF8, 0x0F08, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
          0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000};
 
+#endif
 const uint16_t ASCII12x12_Table [] = {
     0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,
     0x0000,0x2000,0x2000,0x2000,0x2000,0x2000,0x2000,0x2000,0x0000,0x2000,0x0000,0x0000,
@@ -951,11 +953,11 @@ const uint16_t ASCII8x8_Table [] = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
 
-sFONT Font16x24 = {
-  ASCII16x24_Table,
-  16, /* Width */
-  24, /* Height */
-};
+//sFONT Font16x24 = {
+//  ASCII16x24_Table,
+//  16, /* Width */
+//  24, /* Height */
+//};
 
 sFONT Font12x12 = {
   ASCII12x12_Table,
@@ -979,7 +981,7 @@ sFONT Font8x8 = {
 /**
   * @}
   */ 
-
+#endif
 
 /** @defgroup FONTS_Private_Function_Prototypes
   * @{
