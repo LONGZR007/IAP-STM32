@@ -39,12 +39,17 @@ sFONT Font16x24 = {
   */
 int main(void)
 {
-	uint8_t update_flag[1];
+  app_info_t app = 
+  {
+    .update_flag = 1,
+    .size = 0,
+  };
 	
   /*初始化按键*/
   Key_GPIO_Config();
 	Debug_USART_Config();
   LED_GPIO_Config();
+  SPI_FLASH_Init();
   
   /*初始化液晶屏*/
   LCD_Init();
@@ -94,12 +99,15 @@ int main(void)
   }
   
   /* 读更新标志 */
-  SPI_FLASH_BufferRead(update_flag, 0, sizeof(update_flag));
+  SPI_FLASH_BufferRead((uint8_t *)&app, SPI_FLASH_APP_ADDR, sizeof(app));
   
-  if (update_flag[0] == 0)
+  if (app.update_flag == 0)
   {
-    /* 有新的 APP 开始更新应用程序 */
+    LCD_DisplayStringLine_EN_CH(LINE(1), (uint8_t* )"                 emXGUI 引导装载程序");
     
+    /* 有新的 APP 开始更新应用程序 */
+    sflash_to_iflash(FLASH_APP_ADDR, SPI_FLASH_APP_ADDR + sizeof(app), app.size);
+//    SPI_FLASH_SectorErase(SPI_FLASH_APP_ADDR);    // 写入成功擦除 APP 信息
   }
   
   /* 不更新直接跳转到应用程序 */

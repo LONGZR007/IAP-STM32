@@ -7,7 +7,7 @@
 
 #define DEBUG_USART                             USART1
 #define DEBUG_USART_CLK                         RCC_APB2Periph_USART1
-#define DEBUG_USART_BAUDRATE                    115200
+#define DEBUG_USART_BAUDRATE                    1500000
 
 #define DEBUG_USART_RX_GPIO_PORT                GPIOA
 #define DEBUG_USART_RX_GPIO_CLK                 RCC_AHB1Periph_GPIOA
@@ -21,6 +21,8 @@
 #define DEBUG_USART_TX_AF                       GPIO_AF_USART1
 #define DEBUG_USART_TX_SOURCE                   GPIO_PinSource9
 
+#define DEBUG_USART_IRQHandler                  USART1_IRQHandler
+#define DEBUG_USART_IRQ                 				USART1_IRQn
 
 #define __DEBUG 	//¿ªÆô´®¿Úµ÷ÊÔ
 
@@ -34,7 +36,7 @@
 
 
 void Debug_USART_Config(void);
-
+void Usart_SendByte(USART_TypeDef* USARTx, char ch);
 
 
 

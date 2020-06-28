@@ -36,6 +36,8 @@
 #include "usbd_core.h"
 #include "usb_conf.h"
 #include "usb_bsp.h"
+#include "./xmodem/xmodem.h"
+#include "./usart/bsp_debug_usart.h"
 
 extern uint32_t USBD_OTG_ISR_Handler (USB_OTG_CORE_HANDLE *pdev);
 extern USB_OTG_CORE_HANDLE  USB_OTG_dev;
@@ -191,5 +193,19 @@ void SysTick_Handler(void)
 
 volatile uint32_t CPU_RunTime = 0UL;
 
+/**
+  * @brief  串口中断处理服务函数
+  * @param  无
+  * @retval 无
+  */
+void DEBUG_USART_IRQHandler(void)
+{
+  uint8_t temp[1];
+	if(USART_GetITStatus(DEBUG_USART, USART_IT_RXNE) != RESET)
+	{		
+    temp[0] = USART_ReceiveData(DEBUG_USART);
+    xmodem_data_recv(temp, 1);
+	}
+}
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

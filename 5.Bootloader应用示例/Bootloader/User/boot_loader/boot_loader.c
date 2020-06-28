@@ -16,10 +16,12 @@
   */ 
 
 #include "./boot_loader/boot_loader.h" 
-
+#include "./flash/bsp_spi_flash.h"
+#include "./internalFlash/bsp_internalFlash.h"
+#include "./lcd/bsp_lcd.h"
 
 pFunction JumpToApplication; 
-
+uint8_t buff[1024*10];
 
 //跳转到应用程序段
 //appxaddr:用户代码起始地址.
@@ -32,9 +34,101 @@ void iap_jump_app(u32 appaddr)
 		__set_MSP(*(__IO uint32_t*) appaddr);				                         	// 初始化APP堆栈指针(用户代码区的第一个字用于存放栈顶地址)
 		JumpToApplication();									                                // 跳转到APP.
 	}
-}		 
+}
 
+/**
+ * @brief   Xmodem 擦除要保存接收数据的扇区.
+ * @param   address ：根据地址来擦除扇区
+ * @return  返回当前扇区剩余的大小
+ */
+uint32_t i_flash_erasure(uint32_t address)
+{
+  sector_t sector_info;
+  if (erasure_sector(address, 1))    // 擦除当前地址所在扇区
+  {
+    return 0;    // 擦除失败
+  }
 
+  sector_info = GetSector(address);    // 得到当前扇区的信息
+
+  return sector_info.size;     // 返回当前扇区剩余大小
+}
+
+/**
+ * @brief   文件数据接收完成回调.
+ * @param   *ptr: 控制句柄.
+ * @param   *file_name: 文件名字.
+ * @param   file_size: 文件大小，若为0xFFFFFFFF，则说明大小无效.
+ * @return  返回写入的结果，0：成功，-1：失败.
+ */
+int w_app_to_flash(uint32_t addr, char *file_data, uint32_t w_size)
+{
+  static uint32_t sector_size = 0;    /* 扇区剩余大小. */
+  
+  /* 当前扇区不够了擦除下一个. */
+  if (sector_size <= w_size)
+  {
+    sector_size += i_flash_erasure(addr + sector_size);
+
+    if (0 == sector_size)
+    {
+      return -1;
+    }
+  }
+  
+  if (flash_write_data(addr, (uint8_t *)file_data, w_size) == 0)    // 写入数据
+  {
+    return 0;
+  }
+  else 
+  {
+    return -1;
+  }
+}
+
+/**
+ * @brief   把外部flash数据拷贝到内部flash.
+ * @param   des:内部FLASH地址
+ * @param   src:外部FLASH地址
+ * @param   size:要拷贝的文件大小
+ * @return  0:文件接收成功 -1:文件接收失败
+ */
+int sflash_to_iflash(uint32_t des_addr, uint32_t src_addr, uint32_t size)
+{
+  uint32_t flash_address = des_addr;
+  uint32_t w_size = 1024;
+  uint32_t s_size = size;
+  uint8_t  flag = 1;
+  char cbuff[128];
+  
+  do
+  {
+    SPI_FLASH_BufferRead(buff, src_addr, w_size);
+    
+    if (w_app_to_flash(flash_address, (char *)buff, w_size) == -1)
+    {
+      return -1;
+    }
+    
+    flash_address += w_size;
+    src_addr += w_size;
+    
+    if (size < w_size)
+    {
+      w_size = size;
+    }
+    else
+    {
+      size -= w_size;
+    }
+    
+    LCD_ClearLine(LINE(3));
+    sprintf(cbuff, "    共需拷贝：%d字节，还剩余：%d字节没有拷贝!", s_size, size);
+    LCD_DisplayStringLine_EN_CH(LINE(3),(uint8_t* )cbuff);
+  }while(size);
+  
+  return 0;
+}
 
 
 
