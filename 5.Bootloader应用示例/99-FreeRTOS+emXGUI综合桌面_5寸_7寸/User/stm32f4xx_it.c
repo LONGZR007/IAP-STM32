@@ -36,7 +36,7 @@
 #include "usbd_core.h"
 #include "usb_conf.h"
 #include "usb_bsp.h"
-#include "./xmodem/xmodem.h"
+#include "./ymodem/ymodem.h"
 #include "./usart/bsp_debug_usart.h"
 
 extern uint32_t USBD_OTG_ISR_Handler (USB_OTG_CORE_HANDLE *pdev);
@@ -204,7 +204,7 @@ void DEBUG_USART_IRQHandler(void)
 	if(USART_GetITStatus(DEBUG_USART, USART_IT_RXNE) != RESET)
 	{		
     temp[0] = USART_ReceiveData(DEBUG_USART);
-    xmodem_data_recv(temp, 1);
+    ymodem_data_recv(temp, 1);
 	}
 }
 

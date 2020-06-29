@@ -3646,6 +3646,20 @@ void PutPixel(int16_t x, int16_t y)
 #endif
 }
 
+void L_DrawRect(uint16_t Xpos, uint16_t Ypos, uint16_t Width, uint16_t Height)
+{
+  int i, j;
+  
+  for (i=0; i<Height; i++)
+  {
+    for (j=0; j<Width; j++)
+    {
+      PutPixel(Xpos + j, Ypos + i);
+    }
+  }
+}
+
+
 /**
  * @}
  */

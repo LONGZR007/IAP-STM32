@@ -2154,14 +2154,14 @@
           <GroupName>sys_update</GroupName>
           <Files>
             <File>
-              <FileName>xmodem.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\User\bsp\xmodem\xmodem.c</FilePath>
-            </File>
-            <File>
               <FileName>sys_update.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\User\app\Board_App\sys_update\sys_update.c</FilePath>
+            </File>
+            <File>
+              <FileName>ymodem.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\User\bsp\ymodem\ymodem.c</FilePath>
             </File>
           </Files>
         </Group>

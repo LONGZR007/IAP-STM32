@@ -51,7 +51,7 @@ uint32_t i_flash_erasure(uint32_t address)
 
   sector_info = GetSector(address);    // 得到当前扇区的信息
 
-  return sector_info.size;     // 返回当前扇区剩余大小
+  return sector_info.size + sector_info.start_addr - address;     // 返回当前扇区剩余大小
 }
 
 /**
@@ -98,21 +98,33 @@ int sflash_to_iflash(uint32_t des_addr, uint32_t src_addr, uint32_t size)
   uint32_t flash_address = des_addr;
   uint32_t w_size = 1024;
   uint32_t s_size = size;
-  uint8_t  flag = 1;
   char cbuff[128];
+  
+  /* 显示文字提示 */
+  sprintf(cbuff, "                  正在升级应用程序！");
+  LCD_SetTextColor(LCD_COLOR565_WHITE);
+  LCD_DisplayStringLine_EN_CH(LINE(3),(uint8_t* )cbuff);
+  
+  /* 绘制进度条背景 */
+  LCD_SetTextColor(LCD_COLOR565_WHITE);
+  L_DrawRect(103, 144, 600, 10);
   
   do
   {
+    /* 读 SPI FLASH 里面的数据 */
     SPI_FLASH_BufferRead(buff, src_addr, w_size);
     
+    /* 写入内部 FLASH */
     if (w_app_to_flash(flash_address, (char *)buff, w_size) == -1)
     {
       return -1;
     }
     
+    /* 地址偏移 */
     flash_address += w_size;
     src_addr += w_size;
     
+    /* 判断读数据的大小 */
     if (size < w_size)
     {
       w_size = size;
@@ -121,10 +133,11 @@ int sflash_to_iflash(uint32_t des_addr, uint32_t src_addr, uint32_t size)
     {
       size -= w_size;
     }
+
+    /* 绘制进度条 */
+    LCD_SetTextColor(LCD_COLOR565_RED);
+    L_DrawRect(104, 145, 598*(s_size - size) / s_size, 8);
     
-    LCD_ClearLine(LINE(3));
-    sprintf(cbuff, "    共需拷贝：%d字节，还剩余：%d字节没有拷贝!", s_size, size);
-    LCD_DisplayStringLine_EN_CH(LINE(3),(uint8_t* )cbuff);
   }while(size);
   
   return 0;

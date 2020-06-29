@@ -71,7 +71,7 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   LED1_ON;
-  LCD_DisplayStringLine_EN_CH(LINE(7), "                 跳转到应用程序失败！请重试！！");
+  LCD_DisplayStringLine_EN_CH(LINE(7), "              跳转到应用程序失败！请重试！！");
   /* Go to infinite loop when Hard Fault exception occurs */
   while (1)
   {}

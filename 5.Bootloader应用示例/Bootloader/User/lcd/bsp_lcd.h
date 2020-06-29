@@ -813,7 +813,7 @@ void LCD_DispString_EN_CH( uint16_t usX, uint16_t usY, const uint8_t * pStr );
 void LCD_DisplayStringLine_EN_CH(uint16_t Line, uint8_t *ptr);
 void LCD_DispString_EN_CH ( uint16_t usX, uint16_t usY, const uint8_t * pStr );
 
-
+void L_DrawRect(uint16_t Xpos, uint16_t Ypos, uint16_t Width, uint16_t Height);
 
 
 

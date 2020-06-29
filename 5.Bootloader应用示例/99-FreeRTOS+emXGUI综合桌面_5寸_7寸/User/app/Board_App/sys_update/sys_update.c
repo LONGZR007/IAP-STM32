@@ -26,7 +26,7 @@
 #include "./usart/bsp_debug_usart.h"
 #include "./lcd/bsp_lcd.h"
 #include "./pic_load/gui_pic_load.h"
-#include "./xmodem/xmodem.h"
+#include "./ymodem/ymodem.h"
 
 /* 图片资源名 */
 //#define GUI_SETTINGS_BACKGROUNG_PIC      "settingsdesktop.jpg"        // 800*480
@@ -88,11 +88,11 @@ void Soft_Reset(void)
 }
 
 /**
- * @brief   Xmodem 发送一个字符的接口.
+ * @brief   Ymodem 发送一个字符的接口.
  * @param   ch ：发送的数据
  * @return  返回发送状态
  */
-int x_transmit_ch(uint8_t ch)
+int y_transmit_ch(uint8_t ch)
 {
 	Usart_SendByte(DEBUG_USART, ch);
 	
@@ -100,7 +100,7 @@ int x_transmit_ch(uint8_t ch)
 }
 
 /**
- * @brief   Xmodem 擦除要保存接收数据的扇区.
+ * @brief   Ymodem 擦除要保存接收数据的扇区.
  * @param   address ：根据地址来擦除扇区
  * @return  返回当前扇区剩余的大小
  */
@@ -112,7 +112,7 @@ uint32_t x_receive_flash_erasure(uint32_t address)
 }
 
 /**
-  * @brief   Xmodem 将接受到的数据保存到flash.
+  * @brief  Ymodem 将接受到的数据保存到flash.
   * @param  start_address ：要写入的起始地址
   * @param  *data : 需要保存的数据
 	* @param  len ：长度
@@ -123,6 +123,23 @@ int x_receive_flash_write(uint32_t start_address, const void *data, uint32_t len
   SPI_FLASH_BufferWrite((uint8_t *)data, start_address, len);
 
   return 0;    // 写入成功
+}
+
+/**
+ * @brief   文件名和大小接收完成回调.
+ * @param   *ptr: 控制句柄.
+ * @param   *file_name: 文件名字.
+ * @param   file_size: 文件大小，若为0xFFFFFFFF，则说明大小无效.
+ * @return  返回写入的结果，0：成功，-1：失败.
+ */
+int receive_nanme_size_callback(void *ptr, char *file_name, y_uint32_t file_size)
+{
+  Y_UNUSED(ptr);
+  Y_UNUSED(file_name);
+  Y_UNUSED(file_size);
+  
+  /* 用户应该在外部实现这个函数 */
+  return 0;
 }
 
 static uint32_t recv_flash = 0;    /* 扇区剩余大小. */
@@ -212,8 +229,8 @@ static void app_bin_download(HWND hwnd)
 
 	while(download_thread) //线程已创建了
 	{
-    res = xmodem_receive();
-    if (res == -1)
+    res = ymodem_receive();
+    if ((res >> 16) & 1)
     {
       SetWindowText(GetDlgItem(hwnd, ID_SYS_UPDATE_RES), L"下载失败，请重试！");
     }
