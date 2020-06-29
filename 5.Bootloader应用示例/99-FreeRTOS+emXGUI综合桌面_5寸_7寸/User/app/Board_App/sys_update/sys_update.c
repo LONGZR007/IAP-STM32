@@ -54,6 +54,9 @@ typedef enum
   ID_SYS_UPDATE_NUM,              // 下载文件数量
   ID_SYS_UPDATE_RES,          // 下载结果提示
   ID_SYS_UPDATE_TITLE,
+	ID_SYS_UPDATE_NAME,
+	ID_SYS_UPDATE_PROGRE,
+	
 }sys_update_id_t;
 
 typedef struct{
@@ -70,13 +73,16 @@ const sys_update_t sys_updat_icon[] = {
   /* 按钮 */
   {L"F",            { 18,  19,  60,  45},  ID_SYS_UPDATE_EXIT},      // 0. 退出按钮
   {L"下载固件",     {318, 390, 166,  70},  ID_SYS_UPDATE_UPDATE},    // 1. 升级按钮
-  {L"已下载：0字节",{ 36, 276,  500, 30},  ID_SYS_UPDATE_NUM},       // 2. 下载文件数量
-  {L"",             { 36, 311, 500,  30},  ID_SYS_UPDATE_RES},       // 3. 下载结果提示
+  {L"已下载：0字节",{ 36, 269,  500, 28},  ID_SYS_UPDATE_NUM},       // 2. 下载文件数量
+  {L"",             { 36, 302, 500,  28},  ID_SYS_UPDATE_RES},       // 3. 下载结果提示
+	{L"正在下载：",   { 36, 236,  600, 28},  ID_SYS_UPDATE_NAME},      // 4. 文件名
   {L"系统升级",     {100,   0,  600, 80},  ID_SYS_UPDATE_TITLE},     // 5. 主题
+	{L"下载进度",     {100, 351,  600, 16},  ID_SYS_UPDATE_PROGRE },   // 6. 下载进度条
 };
 
 TaskHandle_t h_download;                    // 下载线程
 HWND update_hwnd;
+HWND download_progbar = NULL;
 
 /*
  * 系统软件复位
@@ -104,12 +110,14 @@ int y_transmit_ch(uint8_t ch)
  * @param   address ：根据地址来擦除扇区
  * @return  返回当前扇区剩余的大小
  */
-uint32_t x_receive_flash_erasure(uint32_t address)
+uint32_t y_receive_flash_erasure(uint32_t address)
 {
   SPI_FLASH_SectorErase(address);    // 擦除当前地址所在扇区
 
   return 4096;     // 返回擦除扇区的大小
 }
+
+uint8_t buff_c[1100];    // 数据缓冲区
 
 /**
   * @brief  Ymodem 将接受到的数据保存到flash.
@@ -118,10 +126,22 @@ uint32_t x_receive_flash_erasure(uint32_t address)
 	* @param  len ：长度
   * @return 写入状态
  */
-int x_receive_flash_write(uint32_t start_address, const void *data, uint32_t len)
+int y_receive_flash_write(uint32_t start_address, const void *data, uint32_t len)
 {
   SPI_FLASH_BufferWrite((uint8_t *)data, start_address, len);
-
+	
+	/* 读写入的数据 */
+	SPI_FLASH_BufferRead((uint8_t *)buff_c, start_address, len);
+	
+	/* 校验 */
+	for (uint32_t i=0; i<len; i++)
+	{
+		if (*((uint8_t *)data + i) != *(buff_c+i))
+		{
+			return -1;
+		}
+	}
+	
   return 0;    // 写入成功
 }
 
@@ -134,9 +154,12 @@ int x_receive_flash_write(uint32_t start_address, const void *data, uint32_t len
  */
 int receive_nanme_size_callback(void *ptr, char *file_name, y_uint32_t file_size)
 {
-  Y_UNUSED(ptr);
-  Y_UNUSED(file_name);
-  Y_UNUSED(file_size);
+	WCHAR wbuf[128];
+	
+//	x_wsprintf(wbuf, L"正在下载：%s", file_name);
+//  SetWindowText(GetDlgItem(update_hwnd, ID_SYS_UPDATE_NAME), wbuf);
+	
+//	SendMessage(download_progbar, PBM_SET_RANGLE, TRUE, file_size);
   
   /* 用户应该在外部实现这个函数 */
   return 0;
@@ -166,12 +189,12 @@ int receive_file_data_callback(void *ptr, char *file_data, uint32_t w_size)
       sector_size = 0;
       recv_size = 0;
       xmodem_actual_flash_address = SAVE_APP_OFFSET_ADDR + sizeof(app_info_t);
-      sector_size += x_receive_flash_erasure(SAVE_APP_OFFSET_ADDR);
+      sector_size += y_receive_flash_erasure(SAVE_APP_OFFSET_ADDR);
       recv_flash = 1;
     }
     else
     {
-      sector_size += x_receive_flash_erasure(xmodem_actual_flash_address + sector_size);
+      sector_size += y_receive_flash_erasure(xmodem_actual_flash_address + sector_size);
     }
 
     if (sector_size <= w_size)
@@ -180,12 +203,14 @@ int receive_file_data_callback(void *ptr, char *file_data, uint32_t w_size)
     }
   }
   
-  if (x_receive_flash_write(xmodem_actual_flash_address, (uint8_t *)file_data, w_size) == 0)    // 写入数据
+  if (y_receive_flash_write(xmodem_actual_flash_address, (uint8_t *)file_data, w_size) == 0)    // 写入数据
   {
     xmodem_actual_flash_address += w_size;
     recv_size += w_size;
+		
     x_wsprintf(wbuf, L"已下载：%d字节！", recv_size);
     SetWindowText(GetDlgItem(update_hwnd, ID_SYS_UPDATE_NUM), wbuf);
+//		SendMessage(download_progbar, PBM_SET_VALUE, TRUE, recv_size);
     return 0;
   }
   else 
@@ -207,7 +232,7 @@ int receive_file_callback(void *ptr)
   app.app_size = xmodem_actual_flash_address - SAVE_APP_OFFSET_ADDR - sizeof(app_info_t);
   app.update_flag = 0;
   
-  x_receive_flash_write(SAVE_APP_OFFSET_ADDR, (uint8_t *)&app, sizeof(app));
+  y_receive_flash_write(SAVE_APP_OFFSET_ADDR, (uint8_t *)&app, sizeof(app));
   
   update_flag = app.update_flag;
   SetWindowText(GetDlgItem(update_hwnd, ID_SYS_UPDATE_UPDATE), L"重启升级");
@@ -215,7 +240,7 @@ int receive_file_callback(void *ptr)
 }
 
 /**
-  * @brief  播放音乐列表进程
+  * @brief  app 文件下载线程
   * @param  hwnd：屏幕窗口的句柄
   * @retval 无
   * @notes  
@@ -230,13 +255,14 @@ static void app_bin_download(HWND hwnd)
 	while(download_thread) //线程已创建了
 	{
     res = ymodem_receive();
-    if ((res >> 16) & 1)
+    if ((res >> 15) & 1)
     {
-      SetWindowText(GetDlgItem(hwnd, ID_SYS_UPDATE_RES), L"下载失败，请重试！");
+			SetWindowText(GetDlgItem(hwnd, ID_SYS_UPDATE_RES), L"下载成功，请重启开发升级！");
     }
     else
     {
-      SetWindowText(GetDlgItem(hwnd, ID_SYS_UPDATE_RES), L"下载成功，请重启开发升级！");
+      SetWindowText(GetDlgItem(update_hwnd, ID_SYS_UPDATE_UPDATE), L"重新下载");
+      SetWindowText(GetDlgItem(hwnd, ID_SYS_UPDATE_RES), L"下载失败，请重试！");
     }
     
     download_thread = 0;
@@ -246,6 +272,61 @@ static void app_bin_download(HWND hwnd)
   recv_flash = 0;
   
   GUI_Thread_Delete(GUI_GetCurThreadHandle()); 
+}
+
+/**
+  * @brief  进度条重绘
+  */
+static void progbar_owner_draw(DRAWITEM_HDR *ds)
+{
+	HWND hwnd;
+	HDC hdc, hdc_mem;
+	RECT rc, m_rc[2], rc_tmp;
+//	int range,val;
+	WCHAR wbuf[128];
+	PROGRESSBAR_CFG cfg;
+	hwnd =ds->hwnd;
+	hdc =ds->hDC;
+
+	
+   /* 背景 */
+  GetClientRect(hwnd, &rc_tmp);//得到控件的位置
+  GetClientRect(hwnd, &rc);//得到控件的位置
+  WindowToScreen(hwnd, (POINT *)&rc_tmp, 1);//坐标转换
+
+	hdc_mem = CreateMemoryDC(SURF_SCREEN, rc.w, rc.h);
+	
+  BitBlt(hdc_mem, rc.x, rc.y, rc.w, rc.h, hdc_clock_bk, rc_tmp.x, rc_tmp.y, SRCCOPY);
+
+   //设置进度条的背景颜色
+	SetBrushColor(hdc,MapRGB(hdc,250,250,250));
+   //填充进度条的背景
+  EnableAntiAlias(hdc, TRUE);
+	FillRoundRect(hdc,&ds->rc, MIN(rc.w,rc.h)/2);   
+//   //设置画笔颜色
+	SetPenColor(hdc,MapRGB(hdc,100,10,10));
+//   //绘制进度条的背景边框
+//   DrawRect(hdc,&rc);
+   /*************第二步***************/	
+   cfg.cbSize =sizeof(cfg);
+	cfg.fMask =PB_CFG_ALL;
+	SendMessage(hwnd,PBM_GET_CFG,0,(LPARAM)&cfg);
+   //生成进度条矩形
+	MakeProgressRect(m_rc,&rc,cfg.Rangle,cfg.Value,PB_ORG_LEFT);
+   //设置进度条的颜色
+	SetBrushColor(hdc_mem,MapRGB(hdc,210,10,10));
+  EnableAntiAlias(hdc, FALSE);
+   //填充进度条
+  // InflateRect(&m_rc[0],-1,-1);
+  EnableAntiAlias(hdc_mem, TRUE);
+	FillRoundRect(hdc_mem, &rc, rc.h/2);
+  EnableAntiAlias(hdc_mem, FALSE);
+  BitBlt(hdc, m_rc[0].x, m_rc[0].y, m_rc[0].w, m_rc[0].h, hdc_mem, 0, 0, SRCCOPY);
+    
+   //绘制进度条的边框，采用圆角边框
+	//DrawRoundRect(hdc,&m_rc[0],MIN(rc.w,rc.h)/2);
+   /************显示进度值****************/
+	DeleteDC(hdc_mem);
 }
 
 static void det_exit_owner_draw(DRAWITEM_HDR *ds) //绘制一个按钮外观
@@ -401,7 +482,7 @@ static LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                         hwnd, sys_updat_icon[xC].id, NULL, NULL); 
         }
         
-        for (uint8_t xC=SYS_UPDATE_ICON_BTN_NUM; xC<SYS_UPDATE_ICON_BTN_NUM+3; xC++)     //  文本
+        for (uint8_t xC=SYS_UPDATE_ICON_BTN_NUM; xC<SYS_UPDATE_ICON_BTN_NUM+4; xC++)     //  文本
         {
           /* 循环创建文本框 */
           CreateWindow(TEXTBOX, sys_updat_icon[xC].icon_name,  WS_OWNERDRAW | WS_VISIBLE,
@@ -409,6 +490,26 @@ static LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                         sys_updat_icon[xC].rc.w, sys_updat_icon[xC].rc.h,
                         hwnd, sys_updat_icon[xC].id, NULL, NULL); 
         }
+				
+				PROGRESSBAR_CFG cfg;
+				
+				//PROGRESSBAR_CFG结构体的大小
+				cfg.cbSize	 = sizeof(PROGRESSBAR_CFG);
+				//开启所有的功能
+				cfg.fMask    = PB_CFG_ALL;
+				//文字格式水平，垂直居中
+				cfg.TextFlag = DT_VCENTER|DT_CENTER;  
+
+				download_progbar = CreateWindow(PROGRESSBAR, L"Loading",
+																		PBS_TEXT|PBS_ALIGN_LEFT|WS_VISIBLE|WS_OWNERDRAW|WS_TRANSPARENT,
+																		sys_updat_icon[6].rc.x, sys_updat_icon[6].rc.y,
+                                    sys_updat_icon[6].rc.w, sys_updat_icon[6].rc.h,
+                            				hwnd, ID_SYS_UPDATE_PROGRE, NULL, NULL);
+
+				SendMessage(download_progbar, PBM_GET_CFG,TRUE, (LPARAM)&cfg);
+				SendMessage(download_progbar, PBM_SET_CFG,TRUE, (LPARAM)&cfg);
+				SendMessage(download_progbar, PBM_SET_RANGLE, TRUE, 1);
+				SendMessage(download_progbar, PBM_SET_VALUE, TRUE, 0);
 
         break;
       }
@@ -439,12 +540,7 @@ static LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             {
               Soft_Reset();    // 复位系统
             }
-            else if (download_thread)
-            {
-              SetWindowText(GetDlgItem(hwnd, ID_SYS_UPDATE_UPDATE), L"下载固件");
-              download_thread = 0;
-            }
-            else
+            else if (download_thread == 0)
             {
               SetWindowText(GetDlgItem(hwnd, ID_SYS_UPDATE_UPDATE), L"正在下载");
               xTaskCreate((TaskFunction_t )(void(*)(void*))app_bin_download,   /* 任务入口函数 */
@@ -475,7 +571,7 @@ static LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             btn_owner_draw(ds);
             return TRUE;
          }
-         else if(ds->ID == ID_SYS_UPDATE_NUM || ds->ID == ID_SYS_UPDATE_RES)
+         else if(ds->ID == ID_SYS_UPDATE_NUM || ds->ID == ID_SYS_UPDATE_RES || ds->ID == ID_SYS_UPDATE_NAME)
          {
             Textbox_OwnerDraw(ds);
             return TRUE;
@@ -485,6 +581,11 @@ static LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
            Title_Textbox_OwnerDraw(ds);
            return TRUE;
          }
+				 else if (ds->ID == ID_SYS_UPDATE_PROGRE)
+				 {
+					 progbar_owner_draw(ds);
+					 return TRUE;
+				 }
          
          return FALSE;
       }
@@ -511,12 +612,12 @@ static LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         BitBlt(hdc, rc.x, rc.y, rc.w, rc.h, hdc_clock_bk, rc.x, rc.y, SRCCOPY);
         
         rc.x = 36;
-        rc.y = 175;
+        rc.y = 155;
         rc.w = 600;
-        rc.h = 30;
+        rc.h = 28;
         SetTextColor(hdc, MapRGB(hdc, 255, 255, 255));
         DrawText(hdc, L"1.请使用串口连接到主机（文件发送端）；", -1, &rc, DT_VCENTER|DT_LEFT);//绘制文字(居中对齐方式)
-        rc.y += rc.h;
+        rc.y += rc.h + 5;
         DrawText(hdc, L"2.按下固件升级后，开始下载新固件；", -1, &rc, DT_VCENTER|DT_LEFT);//绘制文字(居中对齐方式)
         
         rc.x = 36;
