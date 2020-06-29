@@ -2376,7 +2376,7 @@ void LCD_DisplayChar(uint16_t Line, uint16_t Column, uint8_t Ascii)
   /*第一次使用，初始化FLASH，并找到字库地址*/
   if(everRead == 0)
   {
-    SPI_FLASH_Init();
+//    SPI_FLASH_Init();
     everRead = 1;
     gbk_start_address = RES_GetInfo_AbsAddr("ASCII16x24_Table.dat", &dir);    // 获取字库的地址
     if (gbk_start_address == -1)

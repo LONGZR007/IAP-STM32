@@ -107,50 +107,28 @@ int sflash_to_iflash(uint32_t des_addr, uint32_t src_addr, uint32_t size)
   
   /* 绘制进度条背景 */
   LCD_SetTextColor(LCD_COLOR565_WHITE);
-  L_DrawRect(103, 144, 600, 10);
+  L_DrawRect(100, 147, 600, 10);
   
-  do
+  for (uint32_t i=0; i<size; i+=w_size)
   {
+    if (size - i < w_size)
+    {
+      w_size = size - i;
+    }
     /* 读 SPI FLASH 里面的数据 */
-    SPI_FLASH_BufferRead(buff, src_addr, w_size);
+    SPI_FLASH_BufferRead(buff, src_addr + i, w_size);
     
     /* 写入内部 FLASH */
-    if (w_app_to_flash(flash_address, (char *)buff, w_size) == -1)
+    if (w_app_to_flash(flash_address + i, (char *)buff, w_size) == -1)
     {
       return -1;
     }
     
-    /* 地址偏移 */
-    flash_address += w_size;
-    src_addr += w_size;
-    
-    /* 判断读数据的大小 */
-    if (size < w_size)
-    {
-      w_size = size;
-    }
-    else
-    {
-      size -= w_size;
-    }
-
     /* 绘制进度条 */
     LCD_SetTextColor(LCD_COLOR565_RED);
-    L_DrawRect(104, 145, 598*(s_size - size) / s_size, 8);
-    
-  }while(size);
-  
+    L_DrawRect(101, 148, 598 * i / s_size, 8);
+  }
+
   return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
 
