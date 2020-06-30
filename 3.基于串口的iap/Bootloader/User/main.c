@@ -57,11 +57,6 @@ int main(void)
 			app_len  = get_rx_len();
 			
 			printf("开始升级 App ！共 %d 个字节\r\n", app_len);
-			
-//			for (uint32_t i=0; i<app_len; i++)
-//			{
-//				printf("%02X ", app_data[i]);
-//			}
       
       /* 写 App 到 FLASH */
 			if (save_data_flash(FLASH_APP_ADDR, app_data, app_len) == 0)
@@ -79,6 +74,7 @@ int main(void)
     if( Key_Scan(KEY2_GPIO_PORT,KEY2_PIN) == KEY_ON  )
 		{
 			/*LED2反转*/
+      TIMx_NVIC_Disable();
 			printf("开始运行 App！\r\n");
 			iap_jump_app(FLASH_APP_ADDR);
 		}

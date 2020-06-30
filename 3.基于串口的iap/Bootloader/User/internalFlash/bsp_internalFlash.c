@@ -149,13 +149,11 @@ int save_data_flash(uint32_t start_address, const void *data, uint32_t len)
 	
 	address = start_address;
 	
-	printf("起始地址 ： 0x%X 结束地址 ：0x%X \r\n", address, start_address + data_len);
-	
 	/* 数据校验 */
   while (address < start_address + data_len)
   {
     uw_data = *(__IO uint8_t*)address;
-		printf("地址 ： 0x%X 实际内容是 ：0x%X  希望的内容是 ：0x%X \r\n", address, uw_data, *data_v);
+
     if (uw_data != *data_v++)
     {
 			

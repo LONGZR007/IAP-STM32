@@ -9,7 +9,7 @@
 #define BASIC_TIM_IRQn					TIM6_DAC_IRQn
 #define BASIC_TIM_IRQHandler    TIM6_DAC_IRQHandler
 
-
+void TIMx_NVIC_Disable(void);
 void TIMx_Configuration(void);
 uint32_t get_sec_timestamp(void);
 void reset_sec_timestamp(void);

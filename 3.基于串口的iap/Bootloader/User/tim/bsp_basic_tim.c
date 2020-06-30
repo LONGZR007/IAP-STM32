@@ -40,6 +40,21 @@ static void TIMx_NVIC_Configuration(void)
     NVIC_Init(&NVIC_InitStructure);
 }
 
+void TIMx_NVIC_Disable(void)
+{
+    NVIC_InitTypeDef NVIC_InitStructure; 
+    // 设置中断组为0
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);		
+		// 设置中断来源
+    NVIC_InitStructure.NVIC_IRQChannel = BASIC_TIM_IRQn; 	
+		// 设置抢占优先级
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;	 
+	  // 设置子优先级
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 3;	
+    NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
+    NVIC_Init(&NVIC_InitStructure);
+}
+
 /*
  * 注意：TIM_TimeBaseInitTypeDef结构体里面有5个成员，TIM6和TIM7的寄存器里面只有
  * TIM_Prescaler和TIM_Period，所以使用TIM6和TIM7的时候只需初始化这两个成员即可，

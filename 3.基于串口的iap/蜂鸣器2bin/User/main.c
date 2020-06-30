@@ -28,7 +28,7 @@ void Delay(__IO u32 nCount);
   */
 int main(void)
 {
-	SCB->VTOR = 0x8010000 | 0; /* Vector Table Relocation in Internal FLASH */
+	SCB->VTOR = 0x8010000; /* Vector Table Relocation in Internal FLASH */
 	/*·äÃùÆ÷¶Ë¿Ú³õÊ¼»¯ */
 	BEEP_GPIO_Config(); 
 
