@@ -101,6 +101,7 @@ int receive_file_data_callback(void *ptr, char *file_data, uint32_t w_size)
   {
     xmodem_actual_flash_address += w_size;
     recv_size += w_size;
+    sector_size -= w_size;
     sprintf((char*)buff, "                 已接收：%d字节！", recv_size);
     LCD_DisplayStringLine_EN_CH(LINE(3), buff);
     return 0;

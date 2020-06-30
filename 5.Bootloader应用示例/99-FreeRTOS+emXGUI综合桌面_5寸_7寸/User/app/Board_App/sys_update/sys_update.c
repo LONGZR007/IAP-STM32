@@ -136,7 +136,7 @@ int y_receive_flash_write(uint32_t start_address, const void *data, uint32_t len
 	/* 校验 */
 	for (uint32_t i=0; i<len; i++)
 	{
-		if (*((uint8_t *)data + i) != *(buff_c+i))
+		if (*((uint8_t *)data + i) != buff_c[i])
 		{
 			return -1;
 		}
@@ -154,18 +154,20 @@ int y_receive_flash_write(uint32_t start_address, const void *data, uint32_t len
  */
 int receive_nanme_size_callback(void *ptr, char *file_name, y_uint32_t file_size)
 {
-	WCHAR wbuf[128];
+	WCHAR wbuf[64];
+  WCHAR wbuf1[64];
+
+  x_mbstowcs_cp936(wbuf, file_name, 128);
+  x_wsprintf(wbuf1, L"正在下载：%s", wbuf);
+  SetWindowText(GetDlgItem(update_hwnd, ID_SYS_UPDATE_NAME), wbuf1);
 	
-//	x_wsprintf(wbuf, L"正在下载：%s", file_name);
-//  SetWindowText(GetDlgItem(update_hwnd, ID_SYS_UPDATE_NAME), wbuf);
-	
-//	SendMessage(download_progbar, PBM_SET_RANGLE, TRUE, file_size);
+	SendMessage(download_progbar, PBM_SET_RANGLE, TRUE, file_size);
   
   /* 用户应该在外部实现这个函数 */
   return 0;
 }
 
-static uint32_t recv_flash = 0;    /* 扇区剩余大小. */
+static uint32_t recv_flash = 0;    /* 接收标准. */
 
 /**
  * @brief   文件数据接收完成回调.
@@ -177,40 +179,39 @@ static uint32_t recv_flash = 0;    /* 扇区剩余大小. */
 int receive_file_data_callback(void *ptr, char *file_data, uint32_t w_size)
 {
   static uint32_t sector_size = 0;    /* 扇区剩余大小. */
-  static uint32_t recv_size = 0;    /* 扇区剩余大小. */
+  static uint32_t recv_size = 0;      /* 已接收大小大小. */
   WCHAR wbuf[128];
+   
+  if (recv_flash == 0)
+  {
+    /* 第一次写数据 */
+    sector_size = 0;
+    recv_size = 0;
+    xmodem_actual_flash_address = SAVE_APP_OFFSET_ADDR + sizeof(app_info_t);
+    sector_size += y_receive_flash_erasure(SAVE_APP_OFFSET_ADDR);    // 擦除第一个扇区（必须是4096的整数倍）
+    sector_size -= sizeof(app_info_t);
+    recv_flash = 1;
+  }
   
   /* 当前扇区不够了擦除下一个. */
   if (sector_size <= w_size)
   {
-    
-    if (recv_flash == 0)
-    {
-      sector_size = 0;
-      recv_size = 0;
-      xmodem_actual_flash_address = SAVE_APP_OFFSET_ADDR + sizeof(app_info_t);
-      sector_size += y_receive_flash_erasure(SAVE_APP_OFFSET_ADDR);
-      recv_flash = 1;
-    }
-    else
-    {
-      sector_size += y_receive_flash_erasure(xmodem_actual_flash_address + sector_size);
-    }
-
+    sector_size += y_receive_flash_erasure(xmodem_actual_flash_address + sector_size);
     if (sector_size <= w_size)
     {
       return -1;
     }
   }
   
-  if (y_receive_flash_write(xmodem_actual_flash_address, (uint8_t *)file_data, w_size) == 0)    // 写入数据
+  if (y_receive_flash_write(xmodem_actual_flash_address, (uint8_t *)file_data, w_size) == 0)    // 写入数据（一次性写入的数据不能超过一个扇区）
   {
     xmodem_actual_flash_address += w_size;
     recv_size += w_size;
+    sector_size -= w_size;
 		
     x_wsprintf(wbuf, L"已下载：%d字节！", recv_size);
     SetWindowText(GetDlgItem(update_hwnd, ID_SYS_UPDATE_NUM), wbuf);
-//		SendMessage(download_progbar, PBM_SET_VALUE, TRUE, recv_size);
+		SendMessage(download_progbar, PBM_SET_VALUE, TRUE, recv_size);
     return 0;
   }
   else 
@@ -226,16 +227,7 @@ int receive_file_data_callback(void *ptr, char *file_data, uint32_t w_size)
  */
 int receive_file_callback(void *ptr)
 {
-  app_info_t app;
-  recv_flash = 0;
   
-  app.app_size = xmodem_actual_flash_address - SAVE_APP_OFFSET_ADDR - sizeof(app_info_t);
-  app.update_flag = 0;
-  
-  y_receive_flash_write(SAVE_APP_OFFSET_ADDR, (uint8_t *)&app, sizeof(app));
-  
-  update_flag = app.update_flag;
-  SetWindowText(GetDlgItem(update_hwnd, ID_SYS_UPDATE_UPDATE), L"重启升级");
   return 0;
 }
 
@@ -257,12 +249,21 @@ static void app_bin_download(HWND hwnd)
     res = ymodem_receive();
     if ((res >> 15) & 1)
     {
-			SetWindowText(GetDlgItem(hwnd, ID_SYS_UPDATE_RES), L"下载成功，请重启开发升级！");
+			SetWindowText(GetDlgItem(update_hwnd, ID_SYS_UPDATE_UPDATE), L"重新下载");
+      SetWindowText(GetDlgItem(hwnd, ID_SYS_UPDATE_RES), L"下载失败，请重试！");
     }
     else
     {
-      SetWindowText(GetDlgItem(update_hwnd, ID_SYS_UPDATE_UPDATE), L"重新下载");
-      SetWindowText(GetDlgItem(hwnd, ID_SYS_UPDATE_RES), L"下载失败，请重试！");
+      app_info_t app;
+      
+      app.app_size = xmodem_actual_flash_address - SAVE_APP_OFFSET_ADDR - sizeof(app_info_t);
+      app.update_flag = 0;
+      
+      y_receive_flash_write(SAVE_APP_OFFSET_ADDR, (uint8_t *)&app, sizeof(app));
+      
+      update_flag = app.update_flag;
+      SetWindowText(GetDlgItem(update_hwnd, ID_SYS_UPDATE_UPDATE), L"重启升级");
+      SetWindowText(GetDlgItem(hwnd, ID_SYS_UPDATE_RES), L"下载成功，请重启开发板升级！");
     }
     
     download_thread = 0;
@@ -480,6 +481,11 @@ static LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                         sys_updat_icon[xC].rc.x, sys_updat_icon[xC].rc.y,
                         sys_updat_icon[xC].rc.w, sys_updat_icon[xC].rc.h,
                         hwnd, sys_updat_icon[xC].id, NULL, NULL); 
+        }
+        
+        if (update_flag)    // 已经成功下载一个 app
+        {
+          SetWindowText(GetDlgItem(hwnd, ID_SYS_UPDATE_UPDATE), L"重启升级");
         }
         
         for (uint8_t xC=SYS_UPDATE_ICON_BTN_NUM; xC<SYS_UPDATE_ICON_BTN_NUM+4; xC++)     //  文本

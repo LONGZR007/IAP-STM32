@@ -103,17 +103,17 @@ int main(void)
   
   if (app.update_flag == 0)
   {
-//    LCD_DisplayStringLine_EN_CH(LINE(1), (uint8_t* )"                 emXGUI 引导装载程序");
-//    
-//    /* 有新的 APP 开始更新应用程序 */
-//    if (sflash_to_iflash(FLASH_APP_ADDR, SPI_FLASH_APP_ADDR + sizeof(app), app.size) == -1)
-//    {
-//      LCD_DisplayStringLine_EN_CH(LINE(5), (uint8_t* )"                 应用程序升级失败！");
-//    }
-//    else
-//    {
-//			SPI_FLASH_SectorErase(SPI_FLASH_APP_ADDR);    // 写入成功擦除 APP 信息
-//    }
+    LCD_DisplayStringLine_EN_CH(LINE(1), (uint8_t* )"                 emXGUI 引导装载程序");
+    
+    /* 有新的 APP 开始更新应用程序 */
+    if (sflash_to_iflash(FLASH_APP_ADDR, SPI_FLASH_APP_ADDR + sizeof(app), app.size) == -1)
+    {
+      LCD_DisplayStringLine_EN_CH(LINE(5), (uint8_t* )"                 应用程序升级失败！");
+    }
+    else
+    {
+			SPI_FLASH_SectorErase(SPI_FLASH_APP_ADDR);    // 写入成功擦除 APP 信息
+    }
   }
   
   /* 不更新直接跳转到应用程序 */

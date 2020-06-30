@@ -94,6 +94,7 @@ int flash_write_data(uint32_t start_address, const void *data, uint32_t len)
 {
 	uint8_t *data_8 = (uint8_t *)data;
 	uint32_t address = start_address;
+  uint32_t len_temp = len;
 	
 	/* FLASH 解锁 ********************************/
   /* 使能访问FLASH控制寄存器 */
@@ -118,10 +119,18 @@ int flash_write_data(uint32_t start_address, const void *data, uint32_t len)
 			return -1;
     }
   }
-	
 	/* 给FLASH上锁，防止内容被篡改*/
   FLASH_Lock(); 
 	
+  /* 校验 */
+	for (uint32_t i=0; i<len_temp; i++)
+	{
+		if (*((uint8_t *)data + i) != *((__IO uint8_t*)(start_address + i)))
+		{
+			return -1;
+		}
+	}
+  
 	return 0;
 }
 

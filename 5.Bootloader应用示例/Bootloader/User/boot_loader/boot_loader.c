@@ -78,6 +78,7 @@ int w_app_to_flash(uint32_t addr, char *file_data, uint32_t w_size)
   
   if (flash_write_data(addr, (uint8_t *)file_data, w_size) == 0)    // Ğ´ÈëÊı¾İ
   {
+    sector_size -= w_size;
     return 0;
   }
   else 
