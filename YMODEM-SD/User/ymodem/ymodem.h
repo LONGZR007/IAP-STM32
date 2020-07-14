@@ -30,6 +30,19 @@ typedef unsigned           int y_uint32_t;
 /* 最大允许错误(用户定义). */
 #define Y_MAY_ERRORS ((y_uint8_t)10u)
 
+
+/* 协议传输状态报告. */
+typedef enum {
+  Y_EN       = 0x00u, /**< 使能. */
+  Y_DIS      = 0x01u, /**< 禁用. */
+  Y_RUN_RECV = 0x02u, /**< 和上位机通讯成功，正常接收运行. */
+  Y_MAX_ERR  = 0x04u, /**< 传输错误达到最大次数而结束传输. */
+  Y_DISK_ERR = 0x06u, /**< 数据写入出现错误而结束传输. */
+  Y_END      = 0x07u, /**< 文件传输正常结束. */
+  Y_CANCEL   = 0x07u, /**< 上位机取消传输结束. */
+  Y_ERR      = 0xFFu  /**< 其他错误. */
+} ymodem_status_t;
+
 /* 检测超时错误配置 */
 /* 0：使用精确时间进行检测，需实现 y_uint32_t y_get_tick(void) 函数，
       该函数应返回毫秒时间戳，当然，也可以是其他值，不过需要调整 Y_RECEIVE_TIMEOUT 的值
@@ -76,13 +89,16 @@ typedef enum {
   Y_ERROR_FLASH   = 0x06u, /**< Flash 错误. */
   Y_EOY           = 0x07u, /**< 文件传输结束 */
   Y_ERROR         = 0xFFu  /**< 其他错误. */
-} ymodem_status;
+} ymodem_fun_status_t;
 
 #define Y_UNUSED(Y) (void)Y      /* To avoid gcc/g++ warnings */
   
 /***************************** 对外函数 ***************************************/
 /* 用户调用 */
 y_uint16_t ymodem_receive(void);
+void ymodem_start_recv(void);
+void ymodem_start_recv(void);
+ymodem_fun_status_t get_ymodem_recv_status(void);
 void ymodem_data_recv(y_uint8_t *data, y_uint16_t data_len);
 
 /* 用户需实现 */

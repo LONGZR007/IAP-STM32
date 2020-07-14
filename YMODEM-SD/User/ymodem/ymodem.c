@@ -17,12 +17,13 @@ static y_uint32_t recv_len;                                           /* ½ÓÊÕµ½Ê
 static y_uint8_t ymodem_packet_number = 0u;                           /* °ü¼ÆÊı. */
 static y_uint16_t ymodem_file_number = 0u;                            /* ÎÄ¼ş¼ÆÊı. */
 static y_uint8_t y_first_packet_received = Y_IS_PACKET;               /* ÊÇ²»ÊÇ°üÍ·. */
-static void *file_ptr = 0;
+static ymodem_status_t y_received_status = Y_DIS;                     /* YmodemµÄ×´Ì¬. */
+static void *file_ptr = 0;                                            /* ¹©ÓÃ»§Ê¹ÓÃµÄÖ¸Õë */
 
 /* ¾Ö²¿º¯Êı. */
 static y_uint16_t ymodem_calc_crc(y_uint8_t *data, y_uint16_t length);
-static ymodem_status ymodem_handle_packet(y_uint8_t *header);
-static ymodem_status ymodem_error_handler(y_uint8_t *error_number, y_uint8_t max_error_number);
+static ymodem_fun_status_t ymodem_handle_packet(y_uint8_t *header);
+static ymodem_fun_status_t ymodem_error_handler(y_uint8_t *error_number, y_uint8_t max_error_number);
 static y_uint16_t get_active_length(y_uint8_t *data, y_uint16_t len);
 static y_uint32_t get_file_len(y_uint8_t *data);
 static int get_receive_data(y_uint8_t **data, y_uint32_t len);
@@ -37,37 +38,38 @@ static y_uint32_t get_recv_len(void);
  */
 y_uint16_t ymodem_receive(void)
 {
-  volatile ymodem_status status = Y_OK;
+  volatile ymodem_fun_status_t status = Y_OK;
   y_uint8_t error_number = 0u;
   y_uint8_t eot_num = 0;     /* ÊÕµ½ EOT µÄ´ÎÊı */
+  ymodem_status_t run_status = Y_DIS;
 
   y_first_packet_received = Y_NO_PACKET;
   ymodem_packet_number = 0u;
   ymodem_file_number = 0u;
-  
-  (void)y_transmit_ch(Y_C);    // ¸øÉÏÎ»»ú·µ»Ø ACSII "C" £¬¸æËßÉÏÎ»»ú½«Ê¹ÓÃ CRC-16 
 
-  /* Ñ­»·£¬Ö±µ½Ã»ÓĞÈÎºÎ´íÎó(»òÕß»òÕßËùÓĞÎÄ¼ş½ÓÊÕÍê³É). */
-  while (Y_OK == status)
+  /* Ê¹ÄÜÊ±¿ªÊ¼Õı³£½ÓÊÕÎÄ¼ş. */
+  if (y_received_status == Y_EN)
   {
     y_uint8_t *header = 0x00u;
+
+    run_status = Y_RUN_RECV;
 
     /* »ñÈ¡Êı¾İÍ·. */
     int receive_status = get_receive_data(&header, 1u);
 
-    /* ÓÃACSII "C"·¢ËÍ¸øÉÏÎ»»ú(Ö±µ½ÎÒÃÇÊÕµ½Ò»Ğ©¶«Î÷), ¸æËßÉÏÎ»»úÎÒÃÇÒªÊ¹ÓÃ CRC-16 . */
-    if ((0 != receive_status) && (Y_NO_PACKET == y_first_packet_received))
+    /* ³¬Ê±ÍË³ö²¢ÇÒÃ»ÓĞ¿ªÊ¼½ÓÊÕÎÄ¼ş. */
+    if ((-1 == receive_status) && (Y_NO_PACKET == y_first_packet_received))
     {
       (void)y_transmit_ch(Y_C);    // ¸øÉÏÎ»»ú·µ»Ø ACSII "C" £¬¸æËßÉÏÎ»»ú½«Ê¹ÓÃ CRC-16 
     }
     /* ³¬Ê±»òÆäËû´íÎó. */
-    else if ((0 != receive_status) && (Y_IS_PACKET == y_first_packet_received))
+    else if ((-1  ==  receive_status) && (Y_IS_PACKET == y_first_packet_received))
     {
       status = ymodem_error_handler(&error_number, Y_MAY_ERRORS);
     }
 
     /* °üÍ·¿ÉÒÔÊ¹: SOH, STX, EOT and CAN. */
-		ymodem_status packet_status = Y_ERROR;
+		ymodem_fun_status_t packet_status = Y_ERROR;
     switch(header[0])
     {
       /* 128»ò1024×Ö½ÚµÄÊı¾İ. */
@@ -94,7 +96,8 @@ y_uint16_t ymodem_receive(void)
         else if (Y_EOY == packet_status)
         {
           (void)y_transmit_ch(Y_ACK);
-          return ymodem_file_number;    // ÎÄ¼ş½ÓÊÕÕı³£,·µ»Ø½ÓÊÕµ½µÄÊıÀï
+          run_status = Y_END;    // ÎÄ¼ş´«ÊäÕı³£½áÊø
+          y_received_status = Y_DIS;    // Õı³£½áÊø½ûÓÃĞ­Òé
         }
         /* ´¦ÀíÊı¾İ°üÊ±³ö´í£¬ÒªÃ´·¢ËÍÒ»¸ö NAK£¬ÒªÃ´Ö´ĞĞ´«ÊäÖĞÖ¹. */
         else
@@ -102,7 +105,7 @@ y_uint16_t ymodem_receive(void)
           status = ymodem_error_handler(&error_number, Y_MAY_ERRORS);
         }
         break;
-      /* ´«Êä½áÊø. */
+      /* Ò»¸öÎÄ¼ş´«Êä½áÊø. */
       case Y_EOT:
         /* ACK£¬·´À¡¸øÉÏÎ»»ú(ÒÔÎÄ±¾ĞÎÊ½). */
         if (++eot_num > 1)
@@ -126,24 +129,30 @@ y_uint16_t ymodem_receive(void)
         break;
       /* Abort from host. */
       case Y_CAN:
-        status = Y_ERROR;
+        run_status = Y_CANCEL;         // ÎÄ¼ş´«ÊäÓÉÉÏÎ»»úÈ¡Ïû½áÊø
+        y_received_status = Y_DIS;     // ½áÊø½ûÓÃĞ­Òé
         break;
       default:
-        /* Wrong header. */
-       if (0 == receive_status)
+          /* ´íÎóµÄÍ·. */
+        if (0 == receive_status)
         {
           status = ymodem_error_handler(&error_number, Y_MAY_ERRORS);
         }
         break;
     }
+
+    if (status == Y_ERROR)                   // ´«Êä·¢Éú´íÎó½áÊø
+    {
+      run_status = Y_MAX_ERR;
+      if (Y_ERROR_FLASH == packet_status)    // µ×²ã´íÎó
+      {
+        run_status = Y_DISK_ERR;             // ±ê¼Çµ×²ã´íÎó
+      }
+      y_received_status = Y_DIS;             // ½ûÓÃ½ÓÊÕ
+    }
   }
   
-  /* ¸´Î» */
-  receive_file_callback(file_ptr);
-  file_ptr = 0;
-  ymodem_file_number |= (1 << 15);
-  
-  return ymodem_file_number;    // ÎÄ¼ş½ÓÊÕ³ö´í,·µ»Ø½ÓÊÕµ½µÄÊıÀïºÍ´íÎóĞÅÏ¢
+  return y_received_status;    // ÎÄ¼ş½ÓÊÕ³ö´í,·µ»Ø½ÓÊÕµ½µÄÊıÀïºÍ´íÎóĞÅÏ¢
 }
 
 /**
@@ -179,9 +188,9 @@ static y_uint16_t ymodem_calc_crc(y_uint8_t *data, y_uint16_t length)
  * @param   header: SOH »òÕß STX.
  * @return  status: ´¦Àí½á¹û.
  */
-static ymodem_status ymodem_handle_packet(y_uint8_t *header)
+static ymodem_fun_status_t ymodem_handle_packet(y_uint8_t *header)
 {
-  ymodem_status status = Y_OK;
+  ymodem_fun_status_t status = Y_OK;
   y_uint16_t size = 0u;
   static y_uint32_t file_len = 0;
   char file_name[50];
@@ -307,9 +316,9 @@ static ymodem_status ymodem_handle_packet(y_uint8_t *header)
  * @param   max_error_number: ÔÊĞíµÄ×î´ó´íÎóÊı.
  * @return  status: Y_ERROR ´ïµ½´íÎóÊıÁ¿ÉÏÏŞ, Y_OK ¼ÌĞø½ÓÊÜ.
  */
-static ymodem_status ymodem_error_handler(y_uint8_t *error_number, y_uint8_t max_error_number)
+static ymodem_fun_status_t ymodem_error_handler(y_uint8_t *error_number, y_uint8_t max_error_number)
 {
-  ymodem_status status = Y_OK;
+  ymodem_fun_status_t status = Y_OK;
   /* ´íÎó¼ÆÊıÆ÷×ÔÔö. */
   (*error_number)++;
   /* Èç¹û¼ÆÊıÆ÷´ïµ½×î´óÖµ£¬ÔòÖĞÖ¹. */
@@ -408,34 +417,49 @@ static y_uint32_t get_file_len(y_uint8_t *data)
  */
 static int get_receive_data(y_uint8_t **data, y_uint32_t len)
 {
-	volatile y_uint32_t timeout = Y_RECEIVE_TIMEOUT;
+	static volatile y_uint32_t timeout = Y_RECEIVE_TIMEOUT;
   y_uint8_t *data_temp = 0;
-  y_uint16_t max_len = 1;
+  y_uint16_t max_len = get_recv_len();
   y_uint16_t data_len[2] = {128, 1024};
   
 #if TIMEOUT_CONFIG
-	while (timeout--)   // µÈ´ıÊı¾İ½ÓÊÕÍê³É
+	if (timeout--)   // µÈ´ıÊı¾İ½ÓÊÕÍê³É
 	{
-    if (get_recv_len() >= max_len)
+    if (timeout == 0)
     {
-      if (max_len != 1)
-        break;
-      
+      timeout = Y_RECEIVE_TIMEOUT;
+      return -1;    // ³¬Ê±´íÎó
+    }
+
+    if (max_len >= 1)
+    {
       data_temp = recv_buf;                                 // »ñÈ¡½ÓÊÕµ½µÄÊı¾İ
       if (*data_temp == Y_SOH || *data_temp == Y_STX)       // µÚÒ»¸öÊÇSOH£¬ËµÃ÷±¾´ÎĞèÒª½ÓÊÕ133¸ö×Ö½Ú
       {
-        max_len = data_len[*data_temp - 1] + 3 + 2;             // ¸ù¾İ²»Í¬µÄÍ·¼ÇÂ¼²»Í¬µÄ³¤¶È
+        if (max_len >= data_len[*data_temp - 1] + 3 + 2);             // ¸ù¾İ²»Í¬µÄÍ·¼ÇÂ¼²»Í¬µÄ³¤¶È
+        {
+          /* »ñÈ¡½ÓÊÕÊı¾İ */
+          *data = recv_buf;
+          reset_recv_len();
+          timeout = Y_RECEIVE_TIMEOUT;
+        }
+        else
+        {
+          return  1;
+        }
       }
       else
       {
-        break;
+        /* »ñÈ¡½ÓÊÕÊı¾İ */
+        *data = recv_buf;
+        reset_recv_len();
+        timeout = Y_RECEIVE_TIMEOUT;
       }
     }
-    
-		if (timeout == 0)
-		{
-			return -1;    // ³¬Ê±´íÎó
-		}
+    else
+    {
+      return  1;
+    }
 	}
 #else
   y_uint32_t tickstart = y_get_tick();
@@ -463,11 +487,7 @@ static int get_receive_data(y_uint8_t **data, y_uint32_t len)
     }
 	}
 #endif
-	
-	/* »ñÈ¡½ÓÊÕÊı¾İ */
-	*data = recv_buf;
-  reset_recv_len();
-	
+
 	return 0;
 }
 
@@ -489,6 +509,42 @@ static void reset_recv_len(void)
 static y_uint32_t get_recv_len(void)
 {
   return recv_len;
+}
+
+/**
+ * @brief   Æô¶¯Ğ­Òé¿ªÊ¼½ÓÊÕÊı¾İ.
+ * @param   void.
+ * @return  void.
+ */
+void ymodem_start_recv(void)
+{
+  if (y_received_status == Y_DIS)
+  {
+    y_received_status = Y_EN;
+    y_transmit_ch(Y_C);
+  }
+}
+
+/**
+ * @brief   È¡Ïû´«Êä.
+ * @param   void.
+ * @return  void.
+ */
+void ymodem_cancel_recv(void)
+{
+  y_received_status = Y_DIS;
+  y_transmit_ch(Y_CAN);
+  y_transmit_ch(Y_CAN);
+}
+
+/**
+ * @brief   »ñÈ¡´«Êä×´Ì¬.
+ * @param   void.
+ * @return  EN or DIS.
+ */
+ymodem_fun_status_t get_ymodem_recv_status(void)
+{
+  return y_received_status;
 }
 
 /**
