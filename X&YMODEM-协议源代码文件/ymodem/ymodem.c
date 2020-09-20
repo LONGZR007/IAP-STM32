@@ -44,6 +44,8 @@ y_uint16_t ymodem_receive(void)
   y_first_packet_received = Y_NO_PACKET;
   ymodem_packet_number = 0u;
   ymodem_file_number = 0u;
+
+  reset_recv_len();    // 清空接收缓冲区（防止在这之前有接收到垃圾数据）
   
   (void)y_transmit_ch(Y_C);    // 给上位机返回 ACSII "C" ，告诉上位机将使用 CRC-16 
 
@@ -56,85 +58,90 @@ y_uint16_t ymodem_receive(void)
     int receive_status = get_receive_data(&header, 1u);
 
     /* 用ACSII "C"发送给上位机(直到我们收到一些东西), 告诉上位机我们要使用 CRC-16 . */
-    if ((0 != receive_status) && (Y_NO_PACKET == y_first_packet_received))
+    if (0 != receive_status)
     {
-      (void)y_transmit_ch(Y_C);    // 给上位机返回 ACSII "C" ，告诉上位机将使用 CRC-16 
+      if (Y_NO_PACKET == y_first_packet_received)
+      {
+        (void)y_transmit_ch(Y_C);    // 给上位机返回 ACSII "C" ，告诉上位机将使用 CRC-16 
+      }
+      else
+      {
+        status = ymodem_error_handler(&error_number, Y_MAY_ERRORS);
+      }
     }
     /* 超时或其他错误. */
-    else if ((0 != receive_status) && (Y_IS_PACKET == y_first_packet_received))
+    else
     {
-      status = ymodem_error_handler(&error_number, Y_MAY_ERRORS);
-    }
-
-    /* 包头可以使: SOH, STX, EOT and CAN. */
-		ymodem_status packet_status = Y_ERROR;
-    switch(header[0])
-    {
-      /* 128或1024字节的数据. */
-      case Y_SOH:
-      case Y_STX:
-        /* 数据处理 */
-        packet_status = ymodem_handle_packet(header);
-				/* 如果处理成功，发送一个 ACK. */
-        if (Y_OK == packet_status)
-        {
-          (void)y_transmit_ch(Y_ACK);
-          if (y_first_packet_received == Y_NO_PACKET)
+      /* 包头可以使: SOH, STX, EOT and CAN. */
+      ymodem_status packet_status = Y_ERROR;
+      switch(header[0])
+      {
+        /* 128或1024字节的数据. */
+        case Y_SOH:
+        case Y_STX:
+          /* 数据处理 */
+          packet_status = ymodem_handle_packet(header);
+          /* 如果处理成功，发送一个 ACK. */
+          if (Y_OK == packet_status)
           {
-            y_transmit_ch(Y_C);
+            (void)y_transmit_ch(Y_ACK);
+            if (y_first_packet_received == Y_NO_PACKET)
+            {
+              y_transmit_ch(Y_C);
+            }
           }
-        }
-        /* 如果错误与flash相关，则立即将错误计数器设置为最大值 (立即终止传输). */
-        else if (Y_ERROR_FLASH == packet_status)
-        {
-          error_number = Y_MAY_ERRORS;
-          status = ymodem_error_handler(&error_number, Y_MAY_ERRORS);
-        }
-        /* 所有文件接收完成. */
-        else if (Y_EOY == packet_status)
-        {
-          (void)y_transmit_ch(Y_ACK);
-          return ymodem_file_number;    // 文件接收正常,返回接收到的数里
-        }
-        /* 处理数据包时出错，要么发送一个 NAK，要么执行传输中止. */
-        else
-        {
-          status = ymodem_error_handler(&error_number, Y_MAY_ERRORS);
-        }
-        break;
-      /* 传输结束. */
-      case Y_EOT:
-        /* ACK，反馈给上位机(以文本形式). */
-        if (++eot_num > 1)
-        {
-          y_transmit_ch(Y_ACK);
-          
-          /* 一个文件传输完成 */
-          y_first_packet_received = Y_NO_PACKET;
-          ymodem_packet_number = 0;
-          receive_file_callback(file_ptr);
-          file_ptr = 0;
-          eot_num = 0;
-          ymodem_file_number++;
+          /* 如果错误与flash相关，则立即将错误计数器设置为最大值 (立即终止传输). */
+          else if (Y_ERROR_FLASH == packet_status)
+          {
+            error_number = Y_MAY_ERRORS;
+            status = ymodem_error_handler(&error_number, Y_MAY_ERRORS);
+          }
+          /* 所有文件接收完成. */
+          else if (Y_EOY == packet_status)
+          {
+            (void)y_transmit_ch(Y_ACK);
+            return ymodem_file_number;    // 文件接收正常,返回接收到的数里
+          }
+          /* 处理数据包时出错，要么发送一个 NAK，要么执行传输中止. */
+          else
+          {
+            status = ymodem_error_handler(&error_number, Y_MAY_ERRORS);
+          }
+          break;
+        /* 传输结束. */
+        case Y_EOT:
+          /* ACK，反馈给上位机(以文本形式). */
+          if (++eot_num > 1)
+          {
+            y_transmit_ch(Y_ACK);
+            
+            /* 一个文件传输完成 */
+            y_first_packet_received = Y_NO_PACKET;
+            ymodem_packet_number = 0;
+            receive_file_callback(file_ptr);
+            file_ptr = 0;
+            eot_num = 0;
+            ymodem_file_number++;
 
-          (void)y_transmit_ch(Y_C);    // 给上位机返回 ACSII "C" ，开启下一次传输
-        }
-        else
-        {
-          y_transmit_ch(Y_NAK);    /* 第一次收到EOT */
-        }
-        break;
-      /* Abort from host. */
-      case Y_CAN:
-        status = Y_ERROR;
-        break;
-      default:
-        /* Wrong header. */
-       if (0 == receive_status)
-        {
-          status = ymodem_error_handler(&error_number, Y_MAY_ERRORS);
-        }
-        break;
+            (void)y_transmit_ch(Y_C);    // 给上位机返回 ACSII "C" ，开启下一次传输
+          }
+          else
+          {
+            y_transmit_ch(Y_NAK);    /* 第一次收到EOT */
+          }
+          break;
+        /* Abort from host. */
+        case Y_CAN:
+          status = Y_ERROR;
+          break;
+        default:
+          /* Wrong header. */
+        if (0 == receive_status)
+          {
+            status = ymodem_error_handler(&error_number, Y_MAY_ERRORS);
+          }
+          break;
+      }
     }
   }
   
@@ -310,6 +317,9 @@ static ymodem_status ymodem_handle_packet(y_uint8_t *header)
 static ymodem_status ymodem_error_handler(y_uint8_t *error_number, y_uint8_t max_error_number)
 {
   ymodem_status status = Y_OK;
+
+  reset_recv_len();    // 清空接收缓冲区
+
   /* 错误计数器自增. */
   (*error_number)++;
   /* 如果计数器达到最大值，则中止. */
@@ -326,6 +336,7 @@ static ymodem_status ymodem_error_handler(y_uint8_t *error_number, y_uint8_t max
     (void)y_transmit_ch(Y_NAK);
     status = Y_OK;
   }
+
   return status;
 }
 
