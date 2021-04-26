@@ -1,6 +1,6 @@
 # STM32实现从0到1的IAP
 
-以下只简单说一下这些文件/项目的功能，以下项目配套[野火F429挑战者_V2开发板](https://detail.tmall.com/item.htm?spm=a1z10.1-b.w20601089-22026361133.6.363f73f5KZlcwa&id=600121332138&skuId=4221916348817)，如果单纯的代码看不懂的话，就看看[原子的IAP教程](https://doc.embedfire.com/motor/f407jiaoyang/zh/latest/index.html)吧。
+以下只简单说一下这些文件/项目的功能，以下项目配套[野火F429挑战者_V2开发板](https://detail.tmall.com/item.htm?spm=a1z10.1-b.w20601089-22026361133.6.363f73f5KZlcwa&id=600121332138&skuId=4221916348817)，如果单纯的代码看不懂的话，就看看[原子的IAP教程](http://www.openedv.com/posts/list/11494.htm)吧。
 
 # 1.通过MDK下载不同程序实现程序跳转
 
