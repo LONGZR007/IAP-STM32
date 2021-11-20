@@ -2,6 +2,8 @@
 
 以下只简单说一下这些文件/项目的功能，以下项目配套[野火F429挑战者_V2开发板](https://detail.tmall.com/item.htm?spm=a1z10.1-b.w20601089-22026361133.6.363f73f5KZlcwa&id=600121332138&skuId=4221916348817)，如果单纯的代码看不懂的话，就看看[原子的IAP教程](http://www.openedv.com/posts/list/11494.htm)吧。
 
+仓库直接克隆会比较大，可以下载压缩包哈。
+
 # 1.通过MDK下载不同程序实现程序跳转
 
 本文件夹下共3个项目
@@ -33,9 +35,8 @@
 - 0-刷外部FLASH程序（烧录emXGUI资源文件）-SD卡:在本次app中使用了emXGUI所有需要刷外部FLASH资源，使用该项目可以使用SD将资源烧录到外部FALSH;
 - 1-刷外部FLASH程序（烧录emXGUI资源文件）-串口YMODEM：在本次app中使用了emXGUI所有需要刷外部FLASH资源，使用该项目可以使用串口[Ymodem协议](https://www.firebbs.cn/forum.php?mod=viewthread&tid=29898)将资源烧录到外部FALSH;
 - Bootloader：Bootloader在上电时按住KEY1则会使用串口[xmodem协议](https://www.firebbs.cn/forum.php?mod=viewthread&tid=29898)接收app文件，将app写入内部FLASH，完成后自动跳转到app，如果没有按住KEY1则会检测保存在外部FLASH中的标志，如果有新的app就升级APP，没有时直接跳转到app运行；
-- App-FreeRTOS+emXGUI综合桌面_5寸_7寸：应用程序，在**设置->系统升级**中可以使用[Ymodem协议](https://www.firebbs.cn/forum.php?mod=viewthread&tid=29898)接收新的app文件到外部FLASH中，完成后将标准写入FLASH中，方便Bootloader检测是否有新的app；
+- App-FreeRTOS+emXGUI综合桌面_5寸_7寸：应用程序，在**设置->系统升级**中可以使用[Ymodem协议](https://www.firebbs.cn/forum.php?mod=viewthread&tid=29898)接收新的app文件到外部FLASH中，完成后将标志写入FLASH中，方便Bootloader检测是否有新的app；
 - 资源文件_5寸：**资源文件_5寸/srcdata**下的文件为资源文件，使用SD卡烧录时将**srcdata**放到SD卡的根目录，使用串口YMODEM烧录时将**资源文件_5寸/srcdata**下的全部文件发送就OK了；
-- 字体原件：生成字库的原件。
 
 # COMM-DRV(Lib)
 
