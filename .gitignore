@@ -1,4 +1,4 @@
-﻿# Private settings
+# Private settings
 private_settings.py
 
 # Compiled Object files
@@ -88,4 +88,7 @@ settings
 
 # vs code
 .vscode
+
+# vs
+.vs
 
