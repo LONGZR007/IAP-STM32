@@ -4,22 +4,22 @@
   * @author  long
   * @version V1.0
   * @date    2020-xx-xx
-  * @brief   ymodem-1k Ğ­Òé
+  * @brief   ymodem-1k åè®®
   ******************************************************************************
 ***/
 
 #include "./ymodem/ymodem.h"
 #include <string.h>
 
-/* È«¾Ö±äÁ¿. */
-static y_uint8_t recv_buf[Y_PROT_FRAME_LEN_RECV];                     /* ½ÓÊÕÊı¾İ»º³åÇø */
-static y_uint32_t recv_len;                                           /* ½ÓÊÕµ½Êı¾İµÄ³¤¶È */
-static y_uint8_t ymodem_packet_number = 0u;                           /* °ü¼ÆÊı. */
-static y_uint16_t ymodem_file_number = 0u;                            /* ÎÄ¼ş¼ÆÊı. */
-static y_uint8_t y_first_packet_received = Y_IS_PACKET;               /* ÊÇ²»ÊÇ°üÍ·. */
+/* å…¨å±€å˜é‡. */
+static y_uint8_t recv_buf[Y_PROT_FRAME_LEN_RECV];                     /* æ¥æ”¶æ•°æ®ç¼“å†²åŒº */
+static y_uint32_t recv_len;                                           /* æ¥æ”¶åˆ°æ•°æ®çš„é•¿åº¦ */
+static y_uint8_t ymodem_packet_number = 0u;                           /* åŒ…è®¡æ•°. */
+static y_uint16_t ymodem_file_number = 0u;                            /* æ–‡ä»¶è®¡æ•°. */
+static y_uint8_t y_first_packet_received = Y_IS_PACKET;               /* æ˜¯ä¸æ˜¯åŒ…å¤´. */
 static void *file_ptr = 0;
 
-/* ¾Ö²¿º¯Êı. */
+/* å±€éƒ¨å‡½æ•°. */
 static y_uint16_t ymodem_calc_crc(y_uint8_t *data, y_uint16_t length);
 static ymodem_status ymodem_handle_packet(y_uint8_t *header);
 static ymodem_status ymodem_error_handler(y_uint8_t *error_number, y_uint8_t max_error_number);
@@ -30,58 +30,58 @@ static void reset_recv_len(void);
 static y_uint32_t get_recv_len(void);
 
 /**
- * @brief   Õâ¸öº¯ÊıÊÇYmodemĞ­ÒéµÄ»ù´¡.
- *          ½ÓÊÕÊı¾İ²¢´¦ÀíÊı¾İ.
- * @param   rec_num:ĞèÒª½ÓÊÕµÄÎÄ¼şÊıÁ¿
- * @return  ·µ»Ø½ÓÊÕµ½µÄÎÄ¼şÊıÁ¿£¬Èç¹û×î¸ßÎ»ÊÇ1ÔòËµÃ÷½ÓÊÕÒì³££¬·ñÔòÕı³£
+ * @brief   è¿™ä¸ªå‡½æ•°æ˜¯Ymodemåè®®çš„åŸºç¡€.
+ *          æ¥æ”¶æ•°æ®å¹¶å¤„ç†æ•°æ®.
+ * @param   rec_num:éœ€è¦æ¥æ”¶çš„æ–‡ä»¶æ•°é‡
+ * @return  è¿”å›æ¥æ”¶åˆ°çš„æ–‡ä»¶æ•°é‡ï¼Œå¦‚æœæœ€é«˜ä½æ˜¯1åˆ™è¯´æ˜æ¥æ”¶å¼‚å¸¸ï¼Œå¦åˆ™æ­£å¸¸
  */
 y_uint16_t ymodem_receive(void)
 {
   volatile ymodem_status status = Y_OK;
   y_uint8_t error_number = 0u;
-  y_uint8_t eot_num = 0;     /* ÊÕµ½ EOT µÄ´ÎÊı */
+  y_uint8_t eot_num = 0;     /* æ”¶åˆ° EOT çš„æ¬¡æ•° */
 
   y_first_packet_received = Y_NO_PACKET;
   ymodem_packet_number = 0u;
   ymodem_file_number = 0u;
 
-  reset_recv_len();    // Çå¿Õ½ÓÊÕ»º³åÇø£¨·ÀÖ¹ÔÚÕâÖ®Ç°ÓĞ½ÓÊÕµ½À¬»øÊı¾İ£©
+  reset_recv_len();    // æ¸…ç©ºæ¥æ”¶ç¼“å†²åŒºï¼ˆé˜²æ­¢åœ¨è¿™ä¹‹å‰æœ‰æ¥æ”¶åˆ°åƒåœ¾æ•°æ®ï¼‰
   
-  (void)y_transmit_ch(Y_C);    // ¸øÉÏÎ»»ú·µ»Ø ACSII "C" £¬¸æËßÉÏÎ»»ú½«Ê¹ÓÃ CRC-16 
+  (void)y_transmit_ch(Y_C);    // ç»™ä¸Šä½æœºè¿”å› ACSII "C" ï¼Œå‘Šè¯‰ä¸Šä½æœºå°†ä½¿ç”¨ CRC-16 
 
-  /* Ñ­»·£¬Ö±µ½Ã»ÓĞÈÎºÎ´íÎó(»òÕß»òÕßËùÓĞÎÄ¼ş½ÓÊÕÍê³É). */
+  /* å¾ªç¯ï¼Œç›´åˆ°æ²¡æœ‰ä»»ä½•é”™è¯¯(æˆ–è€…æˆ–è€…æ‰€æœ‰æ–‡ä»¶æ¥æ”¶å®Œæˆ). */
   while (Y_OK == status)
   {
     y_uint8_t *header = 0x00u;
 
-    /* »ñÈ¡Êı¾İÍ·. */
+    /* è·å–æ•°æ®å¤´. */
     int receive_status = get_receive_data(&header, 1u);
 
-    /* ÓÃACSII "C"·¢ËÍ¸øÉÏÎ»»ú(Ö±µ½ÎÒÃÇÊÕµ½Ò»Ğ©¶«Î÷), ¸æËßÉÏÎ»»úÎÒÃÇÒªÊ¹ÓÃ CRC-16 . */
+    /* ç”¨ACSII "C"å‘é€ç»™ä¸Šä½æœº(ç›´åˆ°æˆ‘ä»¬æ”¶åˆ°ä¸€äº›ä¸œè¥¿), å‘Šè¯‰ä¸Šä½æœºæˆ‘ä»¬è¦ä½¿ç”¨ CRC-16 . */
     if (0 != receive_status)
     {
       if (Y_NO_PACKET == y_first_packet_received)
       {
-        (void)y_transmit_ch(Y_C);    // ¸øÉÏÎ»»ú·µ»Ø ACSII "C" £¬¸æËßÉÏÎ»»ú½«Ê¹ÓÃ CRC-16 
+        (void)y_transmit_ch(Y_C);    // ç»™ä¸Šä½æœºè¿”å› ACSII "C" ï¼Œå‘Šè¯‰ä¸Šä½æœºå°†ä½¿ç”¨ CRC-16 
       }
       else
       {
         status = ymodem_error_handler(&error_number, Y_MAY_ERRORS);
       }
     }
-    /* ³¬Ê±»òÆäËû´íÎó. */
+    /* è¶…æ—¶æˆ–å…¶ä»–é”™è¯¯. */
     else
     {
-      /* °üÍ·¿ÉÒÔÊ¹: SOH, STX, EOT and CAN. */
+      /* åŒ…å¤´å¯ä»¥ä½¿: SOH, STX, EOT and CAN. */
       ymodem_status packet_status = Y_ERROR;
       switch(header[0])
       {
-        /* 128»ò1024×Ö½ÚµÄÊı¾İ. */
+        /* 128æˆ–1024å­—èŠ‚çš„æ•°æ®. */
         case Y_SOH:
         case Y_STX:
-          /* Êı¾İ´¦Àí */
+          /* æ•°æ®å¤„ç† */
           packet_status = ymodem_handle_packet(header);
-          /* Èç¹û´¦Àí³É¹¦£¬·¢ËÍÒ»¸ö ACK. */
+          /* å¦‚æœå¤„ç†æˆåŠŸï¼Œå‘é€ä¸€ä¸ª ACK. */
           if (Y_OK == packet_status)
           {
             (void)y_transmit_ch(Y_ACK);
@@ -90,32 +90,32 @@ y_uint16_t ymodem_receive(void)
               y_transmit_ch(Y_C);
             }
           }
-          /* Èç¹û´íÎóÓëflashÏà¹Ø£¬ÔòÁ¢¼´½«´íÎó¼ÆÊıÆ÷ÉèÖÃÎª×î´óÖµ (Á¢¼´ÖÕÖ¹´«Êä). */
+          /* å¦‚æœé”™è¯¯ä¸flashç›¸å…³ï¼Œåˆ™ç«‹å³å°†é”™è¯¯è®¡æ•°å™¨è®¾ç½®ä¸ºæœ€å¤§å€¼ (ç«‹å³ç»ˆæ­¢ä¼ è¾“). */
           else if (Y_ERROR_FLASH == packet_status)
           {
             error_number = Y_MAY_ERRORS;
             status = ymodem_error_handler(&error_number, Y_MAY_ERRORS);
           }
-          /* ËùÓĞÎÄ¼ş½ÓÊÕÍê³É. */
+          /* æ‰€æœ‰æ–‡ä»¶æ¥æ”¶å®Œæˆ. */
           else if (Y_EOY == packet_status)
           {
             (void)y_transmit_ch(Y_ACK);
-            return ymodem_file_number;    // ÎÄ¼ş½ÓÊÕÕı³£,·µ»Ø½ÓÊÕµ½µÄÊıÀï
+            return ymodem_file_number;    // æ–‡ä»¶æ¥æ”¶æ­£å¸¸,è¿”å›æ¥æ”¶åˆ°çš„æ•°é‡Œ
           }
-          /* ´¦ÀíÊı¾İ°üÊ±³ö´í£¬ÒªÃ´·¢ËÍÒ»¸ö NAK£¬ÒªÃ´Ö´ĞĞ´«ÊäÖĞÖ¹. */
+          /* å¤„ç†æ•°æ®åŒ…æ—¶å‡ºé”™ï¼Œè¦ä¹ˆå‘é€ä¸€ä¸ª NAKï¼Œè¦ä¹ˆæ‰§è¡Œä¼ è¾“ä¸­æ­¢. */
           else
           {
             status = ymodem_error_handler(&error_number, Y_MAY_ERRORS);
           }
           break;
-        /* ´«Êä½áÊø. */
+        /* ä¼ è¾“ç»“æŸ. */
         case Y_EOT:
-          /* ACK£¬·´À¡¸øÉÏÎ»»ú(ÒÔÎÄ±¾ĞÎÊ½). */
+          /* ACKï¼Œåé¦ˆç»™ä¸Šä½æœº(ä»¥æ–‡æœ¬å½¢å¼). */
           if (++eot_num > 1)
           {
             y_transmit_ch(Y_ACK);
             
-            /* Ò»¸öÎÄ¼ş´«ÊäÍê³É */
+            /* ä¸€ä¸ªæ–‡ä»¶ä¼ è¾“å®Œæˆ */
             y_first_packet_received = Y_NO_PACKET;
             ymodem_packet_number = 0;
             receive_file_callback(file_ptr);
@@ -123,11 +123,11 @@ y_uint16_t ymodem_receive(void)
             eot_num = 0;
             ymodem_file_number++;
 
-            (void)y_transmit_ch(Y_C);    // ¸øÉÏÎ»»ú·µ»Ø ACSII "C" £¬¿ªÆôÏÂÒ»´Î´«Êä
+            (void)y_transmit_ch(Y_C);    // ç»™ä¸Šä½æœºè¿”å› ACSII "C" ï¼Œå¼€å¯ä¸‹ä¸€æ¬¡ä¼ è¾“
           }
           else
           {
-            y_transmit_ch(Y_NAK);    /* µÚÒ»´ÎÊÕµ½EOT */
+            y_transmit_ch(Y_NAK);    /* ç¬¬ä¸€æ¬¡æ”¶åˆ°EOT */
           }
           break;
         /* Abort from host. */
@@ -145,19 +145,19 @@ y_uint16_t ymodem_receive(void)
     }
   }
   
-  /* ¸´Î» */
+  /* å¤ä½ */
   receive_file_callback(file_ptr);
   file_ptr = 0;
   ymodem_file_number |= (1 << 15);
   
-  return ymodem_file_number;    // ÎÄ¼ş½ÓÊÕ³ö´í,·µ»Ø½ÓÊÕµ½µÄÊıÀïºÍ´íÎóĞÅÏ¢
+  return ymodem_file_number;    // æ–‡ä»¶æ¥æ”¶å‡ºé”™,è¿”å›æ¥æ”¶åˆ°çš„æ•°é‡Œå’Œé”™è¯¯ä¿¡æ¯
 }
 
 /**
- * @brief   ¼ÆËã½ÓÊÕµ½°üµÄ CRC-16.
- * @param   *data:  Òª¼ÆËãµÄÊı¾İµÄÊı×é.
- * @param   length: Êı¾İµÄ´óĞ¡£¬128×Ö½Ú»ò1024×Ö½Ú.
- * @return  status: ¼ÆËãCRC.
+ * @brief   è®¡ç®—æ¥æ”¶åˆ°åŒ…çš„ CRC-16.
+ * @param   *data:  è¦è®¡ç®—çš„æ•°æ®çš„æ•°ç»„.
+ * @param   length: æ•°æ®çš„å¤§å°ï¼Œ128å­—èŠ‚æˆ–1024å­—èŠ‚.
+ * @return  status: è®¡ç®—CRC.
  */
 static y_uint16_t ymodem_calc_crc(y_uint8_t *data, y_uint16_t length)
 {
@@ -182,9 +182,9 @@ static y_uint16_t ymodem_calc_crc(y_uint8_t *data, y_uint16_t length)
 }
 
 /**
- * @brief   Õâ¸öº¯Êı´¦ÀíÎÒÃÇ´ÓymodemĞ­ÒéÖĞ»ñµÃµÄÊı¾İ°ü.
- * @param   header: SOH »òÕß STX.
- * @return  status: ´¦Àí½á¹û.
+ * @brief   è¿™ä¸ªå‡½æ•°å¤„ç†æˆ‘ä»¬ä»ymodemåè®®ä¸­è·å¾—çš„æ•°æ®åŒ….
+ * @param   header: SOH æˆ–è€… STX.
+ * @return  status: å¤„ç†ç»“æœ.
  */
 static ymodem_status ymodem_handle_packet(y_uint8_t *header)
 {
@@ -203,88 +203,88 @@ static ymodem_status ymodem_handle_packet(y_uint8_t *header)
   }
   else
   {
-    /* ´íÎóµÄÀàĞÍ. */
+    /* é”™è¯¯çš„ç±»å‹. */
     status = Y_ERROR;
   }
   y_uint16_t length = size + Y_PACKET_DATA_INDEX + Y_PACKET_CRC_SIZE;
 
-#if 1    // 0:²»¿½±´¿ÉÒÔ¼Ó¿ì´«ÊäËÙ¶È£¬²»¹ı²»½¨ÒéÕâÑù×ö
+#if 1    // 0:ä¸æ‹·è´å¯ä»¥åŠ å¿«ä¼ è¾“é€Ÿåº¦ï¼Œä¸è¿‡ä¸å»ºè®®è¿™æ ·åš
   y_uint8_t received_data[Y_PACKET_1024_SIZE + Y_PACKET_DATA_INDEX + Y_PACKET_CRC_SIZE];
 
 	memcpy(&received_data[0u], header, length);
 #else
   y_uint8_t *received_data = header;
 #endif
-  /* ½ÓÊÕÊı¾İ. */
+  /* æ¥æ”¶æ•°æ®. */
   int receive_status = 0;
 
-  /* ´íÎó´¦Àí»òÕßĞ´Èë flash. */
+  /* é”™è¯¯å¤„ç†æˆ–è€…å†™å…¥ flash. */
   if (Y_OK == status)
   {
-  #if 1    // 0:²»Ğ£Ñé¿ÉÒÔ¼Ó¼Ó¿ì´«ÊäËÙ¶È£¬²»¹ı²»½¨ÒéÕâÑù×ö
-    /* ×îºóÁ½¸ö×Ö½ÚÊÇÀ´×ÔÖ÷»úµÄCRC. */
+  #if 1    // 0:ä¸æ ¡éªŒå¯ä»¥åŠ åŠ å¿«ä¼ è¾“é€Ÿåº¦ï¼Œä¸è¿‡ä¸å»ºè®®è¿™æ ·åš
+    /* æœ€åä¸¤ä¸ªå­—èŠ‚æ˜¯æ¥è‡ªä¸»æœºçš„CRC. */
     y_uint16_t crc_received = ((y_uint16_t)received_data[length-2u] << 8u) | ((y_uint16_t)received_data[length-1u]);
-    /* Ğ£Ñé. */
+    /* æ ¡éªŒ. */
     y_uint16_t crc_calculated = ymodem_calc_crc(&received_data[Y_PACKET_DATA_INDEX], size);
     if (crc_calculated != crc_received)
     {
-      /* ¼ÆËãµÄCRCºÍ½ÓÊÕµÄCRC²»Í¬. */
+      /* è®¡ç®—çš„CRCå’Œæ¥æ”¶çš„CRCä¸åŒ. */
       status |= Y_ERROR_CRC;
     }
   #endif
     if (0 != receive_status)
     {
-      /* ´«Êä´íÎó. */
+      /* ä¼ è¾“é”™è¯¯. */
       status |= Y_ERROR_UART;
     }
     
     if (ymodem_packet_number != received_data[Y_PACKET_NUMBER_INDEX])
     {
-      /* °üÊıÁ¿Óë¼ÆÊıÆ÷²»Æ¥Åä. */
+      /* åŒ…æ•°é‡ä¸è®¡æ•°å™¨ä¸åŒ¹é…. */
       status |= Y_ERROR_NUMBER;
     }
     
     if (255u != (received_data[Y_PACKET_NUMBER_INDEX] +  received_data[Y_PACKET_NUMBER_COMPLEMENT_INDEX]))
     {
-      /* °üºÅºÍ°üºÅ²¹ÊıÖ®ºÍ²»ÊÇ255. */
-      /* ×ÜºÍÓ¦¸Ã×ÜÊÇ255. */
+      /* åŒ…å·å’ŒåŒ…å·è¡¥æ•°ä¹‹å’Œä¸æ˜¯255. */
+      /* æ€»å’Œåº”è¯¥æ€»æ˜¯255. */
       status |= Y_ERROR_NUMBER;
     }
     
-    if (received_data[Y_PACKET_NUMBER_INDEX] == 0x00 && y_first_packet_received == Y_NO_PACKET)    // µÚÒ»¸ö°ü
+    if (received_data[Y_PACKET_NUMBER_INDEX] == 0x00 && y_first_packet_received == Y_NO_PACKET)    // ç¬¬ä¸€ä¸ªåŒ…
     {
       strcpy(file_name, (char *)&received_data[Y_PACKET_DATA_INDEX]);
       if (strlen(file_name) == 0)
       {
-        /* ÎÄ¼şÃû×ÖÎª¿ÕËµÃ÷ÎÄ¼ş´«Êä½áÊø. */
+        /* æ–‡ä»¶åå­—ä¸ºç©ºè¯´æ˜æ–‡ä»¶ä¼ è¾“ç»“æŸ. */
         status |= Y_EOY;
       }
       else
       {
         file_len = get_file_len((y_uint8_t *)&received_data[Y_PACKET_DATA_INDEX]);
-        if (receive_nanme_size_callback(file_ptr, file_name, file_len) != 0)     // µ÷ÓÃ½ÓÊÕÍê³É»Øµ÷º¯Êı
+        if (receive_nanme_size_callback(file_ptr, file_name, file_len) != 0)     // è°ƒç”¨æ¥æ”¶å®Œæˆå›è°ƒå‡½æ•°
         {
-          /* Ó²¼ş´íÎó. */
+          /* ç¡¬ä»¶é”™è¯¯. */
           status |= Y_ERROR_FLASH;
         }
       }
     }
     else
     { 
-      if (file_len == 0xFFFFFFFF)    // ²»ÊÇÓĞĞ§µÄ³¤¶È
+      if (file_len == 0xFFFFFFFF)    // ä¸æ˜¯æœ‰æ•ˆçš„é•¿åº¦
       {
-        /* file_len ²»ÊÇÓĞĞ§µÄÊıÖµ£¬ÅĞ¶ÏÊı¾İÊÇ 0x1A ÄÇÃ´¾Í¶ªÆúÊı¾İ */
-        size = get_active_length((y_uint8_t *)&received_data[Y_PACKET_DATA_INDEX], size);        // »ñÈ¡ÓĞĞ§µÄ³¤¶È
+        /* file_len ä¸æ˜¯æœ‰æ•ˆçš„æ•°å€¼ï¼Œåˆ¤æ–­æ•°æ®æ˜¯ 0x1A é‚£ä¹ˆå°±ä¸¢å¼ƒæ•°æ® */
+        size = get_active_length((y_uint8_t *)&received_data[Y_PACKET_DATA_INDEX], size);        // è·å–æœ‰æ•ˆçš„é•¿åº¦
       }
       
-      if (file_len < size)    /* ×îºóÒ»Ö¡ÁË£¬²¢ÇÒÊı¾İÃ»ÓĞsizeÕâÃ´´ó */
+      if (file_len < size)    /* æœ€åä¸€å¸§äº†ï¼Œå¹¶ä¸”æ•°æ®æ²¡æœ‰sizeè¿™ä¹ˆå¤§ */
       {
         size = file_len;
       }
 
       if (receive_file_data_callback(file_ptr, (char *)&received_data[Y_PACKET_DATA_INDEX], size) != 0)
       {
-        /* Ó²¼ş´íÎó. */
+        /* ç¡¬ä»¶é”™è¯¯. */
         status |= Y_ERROR_FLASH;
       }
 
@@ -293,12 +293,12 @@ static ymodem_status ymodem_handle_packet(y_uint8_t *header)
         file_len -= size;
       }
       
-      /* ±ê¼Ç½ÓÊÕµ½Ò»¸ö°ü. */
+      /* æ ‡è®°æ¥æ”¶åˆ°ä¸€ä¸ªåŒ…. */
       y_first_packet_received = Y_IS_PACKET;
     }
   }
 
-  /* Ôö¼Ó°ü¼ÆÊıºÍµØÖ·£¬¼õÉÙµ±Ç°ÉÈÇøµÄÊ£ÓàÊıÁ¿ (Èç¹ûÃ»ÓĞÈÎºÎ´íÎóµÄ»°). */
+  /* å¢åŠ åŒ…è®¡æ•°å’Œåœ°å€ï¼Œå‡å°‘å½“å‰æ‰‡åŒºçš„å‰©ä½™æ•°é‡ (å¦‚æœæ²¡æœ‰ä»»ä½•é”™è¯¯çš„è¯). */
   if (Y_OK == status)
   { 
     ymodem_packet_number++;
@@ -308,29 +308,29 @@ static ymodem_status ymodem_handle_packet(y_uint8_t *header)
 }
 
 /**
- * @brief   ´¦Àíymodem´íÎó.
- *          Ôö¼Ó´íÎó¼ÆÊıÆ÷£¬È»ºóÈç¹û´íÎóÊıÁ¿´ïµ½ÁÙ½ç£¬Ôò·¢ËÍÖÕÖ¹£¬·ñÔò·¢ËÍÒ»¸ö NAK.
- * @param   *error_number:    µ±Ç°´íÎóÊı(×÷ÎªÖ¸Õë´«µİ).
- * @param   max_error_number: ÔÊĞíµÄ×î´ó´íÎóÊı.
- * @return  status: Y_ERROR ´ïµ½´íÎóÊıÁ¿ÉÏÏŞ, Y_OK ¼ÌĞø½ÓÊÜ.
+ * @brief   å¤„ç†ymodemé”™è¯¯.
+ *          å¢åŠ é”™è¯¯è®¡æ•°å™¨ï¼Œç„¶åå¦‚æœé”™è¯¯æ•°é‡è¾¾åˆ°ä¸´ç•Œï¼Œåˆ™å‘é€ç»ˆæ­¢ï¼Œå¦åˆ™å‘é€ä¸€ä¸ª NAK.
+ * @param   *error_number:    å½“å‰é”™è¯¯æ•°(ä½œä¸ºæŒ‡é’ˆä¼ é€’).
+ * @param   max_error_number: å…è®¸çš„æœ€å¤§é”™è¯¯æ•°.
+ * @return  status: Y_ERROR è¾¾åˆ°é”™è¯¯æ•°é‡ä¸Šé™, Y_OK ç»§ç»­æ¥å—.
  */
 static ymodem_status ymodem_error_handler(y_uint8_t *error_number, y_uint8_t max_error_number)
 {
   ymodem_status status = Y_OK;
 
-  reset_recv_len();    // Çå¿Õ½ÓÊÕ»º³åÇø
+  reset_recv_len();    // æ¸…ç©ºæ¥æ”¶ç¼“å†²åŒº
 
-  /* ´íÎó¼ÆÊıÆ÷×ÔÔö. */
+  /* é”™è¯¯è®¡æ•°å™¨è‡ªå¢. */
   (*error_number)++;
-  /* Èç¹û¼ÆÊıÆ÷´ïµ½×î´óÖµ£¬ÔòÖĞÖ¹. */
+  /* å¦‚æœè®¡æ•°å™¨è¾¾åˆ°æœ€å¤§å€¼ï¼Œåˆ™ä¸­æ­¢. */
   if ((*error_number) >= max_error_number)
   {
-    /* ÖÕÖ¹´«Êä. */
+    /* ç»ˆæ­¢ä¼ è¾“. */
     (void)y_transmit_ch(Y_CAN);
     (void)y_transmit_ch(Y_CAN);
     status = Y_ERROR;
   }
-  /* ·¢ËÍÒ»¸öNAK½øĞĞÖØ¸´. */
+  /* å‘é€ä¸€ä¸ªNAKè¿›è¡Œé‡å¤. */
   else
   {
     (void)y_transmit_ch(Y_NAK);
@@ -341,10 +341,10 @@ static ymodem_status ymodem_error_handler(y_uint8_t *error_number, y_uint8_t max
 }
 
 /**
- * @brief   »ñÈ¡ÎÄ¼şÓĞĞ§µÄ³¤¶È£¨³ıÈ¥ºóÃæÎª0x1AµÄ×Ö½Ú£©.
- * @param   *data: Ö¸ÏòÊı¾İµÄÖ¸Õë.
- * @param   len: Êı¾İ³¤¶È.
- * @return  ÓĞĞ§µÄÊı¾İ³¤¶È.
+ * @brief   è·å–æ–‡ä»¶æœ‰æ•ˆçš„é•¿åº¦ï¼ˆé™¤å»åé¢ä¸º0x1Açš„å­—èŠ‚ï¼‰.
+ * @param   *data: æŒ‡å‘æ•°æ®çš„æŒ‡é’ˆ.
+ * @param   len: æ•°æ®é•¿åº¦.
+ * @return  æœ‰æ•ˆçš„æ•°æ®é•¿åº¦.
  */
 static y_uint16_t get_active_length(y_uint8_t *data, y_uint16_t len)
 {
@@ -364,10 +364,10 @@ static y_uint16_t get_active_length(y_uint8_t *data, y_uint16_t len)
 }
   
 /**
- * @brief   »ñÈ¡ÎÄ¼ş³¤¶È.
- * @param   *data: Ö¸ÏòÊı¾İµÄÖ¸Õë.
- * @param   len: Êı¾İ³¤¶È.
- * @return  ÕÒµ½Ôò·µ»ØÎÄ¼ş³¤¶È£¬·ñÔò·µ»Ø0xFFFFFFFF.
+ * @brief   è·å–æ–‡ä»¶é•¿åº¦.
+ * @param   *data: æŒ‡å‘æ•°æ®çš„æŒ‡é’ˆ.
+ * @param   len: æ•°æ®é•¿åº¦.
+ * @return  æ‰¾åˆ°åˆ™è¿”å›æ–‡ä»¶é•¿åº¦ï¼Œå¦åˆ™è¿”å›0xFFFFFFFF.
  */
 static y_uint32_t get_file_len(y_uint8_t *data)
 {
@@ -375,7 +375,7 @@ static y_uint32_t get_file_len(y_uint8_t *data)
   y_uint16_t count = 0;
   y_uint16_t index = 0;
 
-  /* ÕÒÎÄ¼ş´óĞ¡µÄÆğÊ¼Î»ÖÃ */
+  /* æ‰¾æ–‡ä»¶å¤§å°çš„èµ·å§‹ä½ç½® */
   for (count=0; count<128; count++)
   {
     if (*(data + count) == '\0')
@@ -388,7 +388,7 @@ static y_uint32_t get_file_len(y_uint8_t *data)
   if (count >= 128)
     return len;
   
-  /* ÕÒÎÄ¼ş´óĞ¡µÄÄ©Î» */
+  /* æ‰¾æ–‡ä»¶å¤§å°çš„æœ«ä½ */
   for (count=index; count<128; count++)
   {
     if (*(data + count) < 0x30 || *(data + count) > 0x39)
@@ -401,7 +401,7 @@ static y_uint32_t get_file_len(y_uint8_t *data)
     return len;
   
   len = 0;
-  /* ×ªÎªÊıÖµ */
+  /* è½¬ä¸ºæ•°å€¼ */
   while(count > index)
   {
     len = *(data + index) - 0x30 + len * 10;
@@ -412,10 +412,10 @@ static y_uint32_t get_file_len(y_uint8_t *data)
 }
 
 /**
- * @brief   Ymodem ½ÓÊÕÊı¾İµÄ½Ó¿Ú.
- * @param   *data £º½ÓÊÕÊı¾İ
- * @param   *len £º½ÓÊÕÊı¾İµÄ³¤¶È
- * @return  ½ÓÊÕÊı¾İµÄ×´Ì¬
+ * @brief   Ymodem æ¥æ”¶æ•°æ®çš„æ¥å£.
+ * @param   *data ï¼šæ¥æ”¶æ•°æ®
+ * @param   *len ï¼šæ¥æ”¶æ•°æ®çš„é•¿åº¦
+ * @return  æ¥æ”¶æ•°æ®çš„çŠ¶æ€
  */
 static int get_receive_data(y_uint8_t **data, y_uint32_t len)
 {
@@ -425,17 +425,17 @@ static int get_receive_data(y_uint8_t **data, y_uint32_t len)
   y_uint16_t data_len[2] = {128, 1024};
   
 #if TIMEOUT_CONFIG
-	while (timeout--)   // µÈ´ıÊı¾İ½ÓÊÕÍê³É
+	while (timeout--)   // ç­‰å¾…æ•°æ®æ¥æ”¶å®Œæˆ
 	{
     if (get_recv_len() >= max_len)
     {
       if (max_len != 1)
         break;
       
-      data_temp = recv_buf;                                 // »ñÈ¡½ÓÊÕµ½µÄÊı¾İ
-      if (*data_temp == Y_SOH || *data_temp == Y_STX)       // µÚÒ»¸öÊÇSOH£¬ËµÃ÷±¾´ÎĞèÒª½ÓÊÕ133¸ö×Ö½Ú
+      data_temp = recv_buf;                                 // è·å–æ¥æ”¶åˆ°çš„æ•°æ®
+      if (*data_temp == Y_SOH || *data_temp == Y_STX)       // ç¬¬ä¸€ä¸ªæ˜¯SOHï¼Œè¯´æ˜æœ¬æ¬¡éœ€è¦æ¥æ”¶133ä¸ªå­—èŠ‚
       {
-        max_len = data_len[*data_temp - 1] + 3 + 2;             // ¸ù¾İ²»Í¬µÄÍ·¼ÇÂ¼²»Í¬µÄ³¤¶È
+        max_len = data_len[*data_temp - 1] + 3 + 2;             // æ ¹æ®ä¸åŒçš„å¤´è®°å½•ä¸åŒçš„é•¿åº¦
       }
       else
       {
@@ -445,16 +445,16 @@ static int get_receive_data(y_uint8_t **data, y_uint32_t len)
     
 		if (timeout == 0)
 		{
-			return -1;    // ³¬Ê±´íÎó
+			return -1;    // è¶…æ—¶é”™è¯¯
 		}
 	}
 #else
   y_uint32_t tickstart = y_get_tick();
-  while (1)   // µÈ´ıÊı¾İ½ÓÊÕÍê³É
+  while (1)   // ç­‰å¾…æ•°æ®æ¥æ”¶å®Œæˆ
 	{
-    if (y_get_tick() - tickstart > timeout)    // ¼ì²éÊÇ·ñ³¬Ê±
+    if (y_get_tick() - tickstart > timeout)    // æ£€æŸ¥æ˜¯å¦è¶…æ—¶
     {
-			return -1;    // ³¬Ê±´íÎó
+			return -1;    // è¶…æ—¶é”™è¯¯
 		}
     
     if (get_recv_len() >= max_len)
@@ -462,10 +462,10 @@ static int get_receive_data(y_uint8_t **data, y_uint32_t len)
       if (max_len != 1)
         break;
       
-      data_temp = recv_buf;                                 // »ñÈ¡½ÓÊÕµ½µÄÊı¾İ
-      if (*data_temp == Y_SOH || *data_temp == Y_STX)       // µÚÒ»¸öÊÇSOH£¬ËµÃ÷±¾´ÎĞèÒª½ÓÊÕ133¸ö×Ö½Ú
+      data_temp = recv_buf;                                 // è·å–æ¥æ”¶åˆ°çš„æ•°æ®
+      if (*data_temp == Y_SOH || *data_temp == Y_STX)       // ç¬¬ä¸€ä¸ªæ˜¯SOHï¼Œè¯´æ˜æœ¬æ¬¡éœ€è¦æ¥æ”¶133ä¸ªå­—èŠ‚
       {
-        max_len = data_len[*data_temp] + 3 + 2;             // ¸ù¾İ²»Í¬µÄÍ·¼ÇÂ¼²»Í¬µÄ³¤¶È
+        max_len = data_len[*data_temp - 1] + 3 + 2;             // æ ¹æ®ä¸åŒçš„å¤´è®°å½•ä¸åŒçš„é•¿åº¦
       }
       else
       {
@@ -475,7 +475,7 @@ static int get_receive_data(y_uint8_t **data, y_uint32_t len)
 	}
 #endif
 	
-	/* »ñÈ¡½ÓÊÕÊı¾İ */
+	/* è·å–æ¥æ”¶æ•°æ® */
 	*data = recv_buf;
   reset_recv_len();
 	
@@ -483,7 +483,7 @@ static int get_receive_data(y_uint8_t **data, y_uint32_t len)
 }
 
 /**
- * @brief   ¸´Î»Êı¾İ½ÓÊÕ³¤¶È
+ * @brief   å¤ä½æ•°æ®æ¥æ”¶é•¿åº¦
   * @param  void.
  * @return  void.
  */
@@ -493,9 +493,9 @@ static void reset_recv_len(void)
 }
 
 /**
- * @brief   »ñÈ¡Êı¾İ½ÓÊÕ³¤¶È
+ * @brief   è·å–æ•°æ®æ¥æ”¶é•¿åº¦
  * @param   void.
- * @return  ½ÓÊÕµ½Êı¾İµÄ³¤¶È.
+ * @return  æ¥æ”¶åˆ°æ•°æ®çš„é•¿åº¦.
  */
 static y_uint32_t get_recv_len(void)
 {
@@ -503,9 +503,9 @@ static y_uint32_t get_recv_len(void)
 }
 
 /**
- * @brief   ½ÓÊÕÊı¾İ´¦Àí
- * @param   *data:  Òª¼ÆËãµÄÊı¾İµÄÊı×é.
- * @param   data_len: Êı¾İµÄ´óĞ¡
+ * @brief   æ¥æ”¶æ•°æ®å¤„ç†
+ * @param   *data:  è¦è®¡ç®—çš„æ•°æ®çš„æ•°ç»„.
+ * @param   data_len: æ•°æ®çš„å¤§å°
  * @return  void.
  */
 void ymodem_data_recv(y_uint8_t *data, y_uint16_t data_len)
@@ -518,9 +518,9 @@ void ymodem_data_recv(y_uint8_t *data, y_uint16_t data_len)
 }
 
 /**
- * @brief   »ñÈ¡ºÁÃëÊ±¼ä´Á.
+ * @brief   è·å–æ¯«ç§’æ—¶é—´æˆ³.
  * @param   void
- * @return  Ê±¼ä´Á
+ * @return  æ—¶é—´æˆ³
  */
 __weak y_uint32_t y_get_tick(void)
 {
@@ -530,9 +530,9 @@ __weak y_uint32_t y_get_tick(void)
 
 
 /**
- * @brief   Ymodem ·¢ËÍÒ»¸ö×Ö·ûµÄ½Ó¿Ú.
- * @param   ch £º·¢ËÍµÄÊı¾İ
- * @return  ·µ»Ø·¢ËÍ×´Ì¬
+ * @brief   Ymodem å‘é€ä¸€ä¸ªå­—ç¬¦çš„æ¥å£.
+ * @param   ch ï¼šå‘é€çš„æ•°æ®
+ * @return  è¿”å›å‘é€çŠ¶æ€
  */
 __weak int y_transmit_ch(y_uint8_t ch)
 {
@@ -542,11 +542,11 @@ __weak int y_transmit_ch(y_uint8_t ch)
 }
 
 /**
- * @brief   ÎÄ¼şÃûºÍ´óĞ¡½ÓÊÕÍê³É»Øµ÷.
- * @param   *ptr: ¿ØÖÆ¾ä±ú.
- * @param   *file_name: ÎÄ¼şÃû×Ö.
- * @param   file_size: ÎÄ¼ş´óĞ¡£¬ÈôÎª0xFFFFFFFF£¬ÔòËµÃ÷´óĞ¡ÎŞĞ§.
- * @return  ·µ»ØĞ´ÈëµÄ½á¹û£¬0£º³É¹¦£¬-1£ºÊ§°Ü.
+ * @brief   æ–‡ä»¶åå’Œå¤§å°æ¥æ”¶å®Œæˆå›è°ƒ.
+ * @param   *ptr: æ§åˆ¶å¥æŸ„.
+ * @param   *file_name: æ–‡ä»¶åå­—.
+ * @param   file_size: æ–‡ä»¶å¤§å°ï¼Œè‹¥ä¸º0xFFFFFFFFï¼Œåˆ™è¯´æ˜å¤§å°æ— æ•ˆ.
+ * @return  è¿”å›å†™å…¥çš„ç»“æœï¼Œ0ï¼šæˆåŠŸï¼Œ-1ï¼šå¤±è´¥.
  */
 __weak int receive_nanme_size_callback(void *ptr, char *file_name, y_uint32_t file_size)
 {
@@ -554,16 +554,16 @@ __weak int receive_nanme_size_callback(void *ptr, char *file_name, y_uint32_t fi
   Y_UNUSED(file_name);
   Y_UNUSED(file_size);
   
-  /* ÓÃ»§Ó¦¸ÃÔÚÍâ²¿ÊµÏÖÕâ¸öº¯Êı */
+  /* ç”¨æˆ·åº”è¯¥åœ¨å¤–éƒ¨å®ç°è¿™ä¸ªå‡½æ•° */
   return -1;
 }
 
 /**
- * @brief   ÎÄ¼şÊı¾İ½ÓÊÕÍê³É»Øµ÷.
- * @param   *ptr: ¿ØÖÆ¾ä±ú.
- * @param   *file_name: ÎÄ¼şÃû×Ö.
- * @param   file_size: ÎÄ¼ş´óĞ¡£¬ÈôÎª0xFFFFFFFF£¬ÔòËµÃ÷´óĞ¡ÎŞĞ§.
- * @return  ·µ»ØĞ´ÈëµÄ½á¹û£¬0£º³É¹¦£¬-1£ºÊ§°Ü.
+ * @brief   æ–‡ä»¶æ•°æ®æ¥æ”¶å®Œæˆå›è°ƒ.
+ * @param   *ptr: æ§åˆ¶å¥æŸ„.
+ * @param   *file_name: æ–‡ä»¶åå­—.
+ * @param   file_size: æ–‡ä»¶å¤§å°ï¼Œè‹¥ä¸º0xFFFFFFFFï¼Œåˆ™è¯´æ˜å¤§å°æ— æ•ˆ.
+ * @return  è¿”å›å†™å…¥çš„ç»“æœï¼Œ0ï¼šæˆåŠŸï¼Œ-1ï¼šå¤±è´¥.
  */
 __weak int receive_file_data_callback(void *ptr, char *file_data, y_uint32_t w_size)
 {
@@ -571,20 +571,20 @@ __weak int receive_file_data_callback(void *ptr, char *file_data, y_uint32_t w_s
   Y_UNUSED(file_data);
   Y_UNUSED(w_size);
   
-  /* ÓÃ»§Ó¦¸ÃÔÚÍâ²¿ÊµÏÖÕâ¸öº¯Êı */
+  /* ç”¨æˆ·åº”è¯¥åœ¨å¤–éƒ¨å®ç°è¿™ä¸ªå‡½æ•° */
   return -1;
 }
 
 /**
- * @brief   Ò»¸öÎÄ¼ş½ÓÊÕÍê³É»Øµ÷.
- * @param   *ptr: ¿ØÖÆ¾ä±ú.
- * @return  ·µ»ØĞ´ÈëµÄ½á¹û£¬0£º³É¹¦£¬-1£ºÊ§°Ü.
+ * @brief   ä¸€ä¸ªæ–‡ä»¶æ¥æ”¶å®Œæˆå›è°ƒ.
+ * @param   *ptr: æ§åˆ¶å¥æŸ„.
+ * @return  è¿”å›å†™å…¥çš„ç»“æœï¼Œ0ï¼šæˆåŠŸï¼Œ-1ï¼šå¤±è´¥.
  */
 __weak int receive_file_callback(void *ptr)
 {
   Y_UNUSED(ptr);
   
-  /* ÓÃ»§Ó¦¸ÃÔÚÍâ²¿ÊµÏÖÕâ¸öº¯Êı */
+  /* ç”¨æˆ·åº”è¯¥åœ¨å¤–éƒ¨å®ç°è¿™ä¸ªå‡½æ•° */
   return -1;
 }
 
